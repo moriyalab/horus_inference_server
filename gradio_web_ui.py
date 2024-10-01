@@ -10,7 +10,7 @@ import glob
 def inference_image(image, mlmodel_name: str, confidence: float):
     model = RTDETR(mlmodel_name)
     results = model.predict(
-        source=image, 
+        source=image,
         conf=confidence / 100,
         verbose=False
         )
@@ -31,6 +31,7 @@ def inference_image(image, mlmodel_name: str, confidence: float):
     df.to_csv(csv_buffer, index=False)
     csv_data = csv_buffer.getvalue()
     return annotated_frame, csv_data
+
 
 def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progress()):
     model = RTDETR(mlmodel_name)
@@ -101,17 +102,17 @@ with gr.Blocks() as main_ui:
             [
                 gr.Image(type="numpy", label="Upload an Image"),
                 gr.Dropdown(
-                    glob.glob("./ml_model/*"), 
-                    value="rtdetr-l.pt", 
-                    label="ML Model", 
+                    glob.glob("./ml_model/*"),
+                    value="rtdetr-l.pt",
+                    label="ML Model",
                     info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
                 ),
                 gr.Slider(
-                    minimum=0, 
-                    maximum=100, 
-                    value=75, 
-                    label="Confidence", 
-                    step=5, 
+                    minimum=0,
+                    maximum=100,
+                    value=75,
+                    label="Confidence",
+                    step=5,
                     info="Choose between 0% and 100%"
                 ),
             ],
@@ -126,17 +127,17 @@ with gr.Blocks() as main_ui:
             [
                 gr.File(label="Upload a Video", file_count="multiple", file_types=["mp4", "mpg", "MOV"]),
                 gr.Dropdown(
-                    glob.glob("./ml_model/*"), 
-                    value="rtdetr-l.pt", 
-                    label="ML Model", 
+                    glob.glob("./ml_model/*"),
+                    value="rtdetr-l.pt",
+                    label="ML Model",
                     info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
                 ),
                 gr.Slider(
-                    minimum=0, 
-                    maximum=100, 
-                    value=75, 
-                    label="Confidence", 
-                    step=5, 
+                    minimum=0,
+                    maximum=100,
+                    value=75,
+                    label="Confidence",
+                    step=5,
                     info="Choose between 0% and 100%"
                 ),
             ],
