@@ -42,7 +42,14 @@ def infer_video(videos, mlmodel_name: str, confidence: float):
                 ret, frame = cap.read()
                 if not ret:
                     break
-                results = model.predict(frame, conf=confidence / 100)
+                results = model.track(
+                    source=frame,
+                    verbose=False,
+                    persist=True,
+                    tracker="botsort.yaml",
+                    conf=confidence / 100,
+                    half=True
+                )
 
                 annotated_frame = results[0].plot()
                 output_frames.append(annotated_frame)
