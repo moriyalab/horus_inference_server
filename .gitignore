@@ -4,3 +4,8 @@
 *.jpg
 *.mp4
 *.mpg
+*.csv
+*.webp
+*.png
+
+flagged*/

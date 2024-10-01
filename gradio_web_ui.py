@@ -9,7 +9,11 @@ import glob
 
 def inference_image(image, mlmodel_name: str, confidence: float):
     model = RTDETR(mlmodel_name)
-    results = model.predict(image, conf=confidence / 100)
+    results = model.predict(
+        source=image, 
+        conf=confidence / 100,
+        verbose=False
+        )
     annotated_frame = results[0].plot()
     results = results[0].cpu()
 
@@ -28,9 +32,9 @@ def inference_image(image, mlmodel_name: str, confidence: float):
     csv_data = csv_buffer.getvalue()
     return annotated_frame, csv_data
 
-
-def infer_video(videos, mlmodel_name: str, confidence: float):
+def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progress()):
     model = RTDETR(mlmodel_name)
+    model.info()
     output_files = []
     boxes_info = []
     for video in videos:
@@ -40,6 +44,7 @@ def infer_video(videos, mlmodel_name: str, confidence: float):
         try:
             while cap.isOpened():
                 ret, frame = cap.read()
+                progress(cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 if not ret:
                     break
                 results = model.track(
@@ -96,9 +101,19 @@ with gr.Blocks() as main_ui:
             [
                 gr.Image(type="numpy", label="Upload an Image"),
                 gr.Dropdown(
-                    glob.glob("./ml_model/*"), value="rtdetr-l.pt", label="ML Model", info="Will add more animals later!"
+                    glob.glob("./ml_model/*"), 
+                    value="rtdetr-l.pt", 
+                    label="ML Model", 
+                    info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
                 ),
-                gr.Slider(0, 100, value=75, label="Confidence", step=5, info="Choose between 0% and 100%"),
+                gr.Slider(
+                    minimum=0, 
+                    maximum=100, 
+                    value=75, 
+                    label="Confidence", 
+                    step=5, 
+                    info="Choose between 0% and 100%"
+                ),
             ],
             [
                 gr.Image(type="numpy", label="result image"),
@@ -109,17 +124,26 @@ with gr.Blocks() as main_ui:
         gr.Interface(
             infer_video,
             [
-                gr.File(label="Upload a Video", file_count="multiple", file_types=["mp4", "mpg"]),
+                gr.File(label="Upload a Video", file_count="multiple", file_types=["mp4", "mpg", "MOV"]),
                 gr.Dropdown(
-                    glob.glob("./ml_model/*"), value="rtdetr-l.pt", label="ML Model", info="Will add more animals later!"
+                    glob.glob("./ml_model/*"), 
+                    value="rtdetr-l.pt", 
+                    label="ML Model", 
+                    info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
                 ),
-                gr.Slider(0, 100, value=75, label="Confidence", step=5, info="Choose between 0% and 100%"),
+                gr.Slider(
+                    minimum=0, 
+                    maximum=100, 
+                    value=75, 
+                    label="Confidence", 
+                    step=5, 
+                    info="Choose between 0% and 100%"
+                ),
             ],
             [
                 gr.File(label="Annotated Video"),
-                # gr.Textbox(label="Bounding Boxes CSV"),
             ]
         )
 
 if __name__ == "__main__":
-    main_ui.launch(server_name="0.0.0.0")
+    main_ui.queue().launch(server_name="0.0.0.0")
