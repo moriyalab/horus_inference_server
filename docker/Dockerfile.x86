@@ -11,5 +11,7 @@ RUN pip install poetry \
 WORKDIR /app
 COPY pyproject.toml* poetry.lock* ./
 
-RUN poetry lock --no-update
 RUN poetry install 
+
+WORKDIR /app/utils
+COPY ./utils/copy_poetry_lock.sh ./
