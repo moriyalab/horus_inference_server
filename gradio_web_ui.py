@@ -5,6 +5,25 @@ import pandas as pd
 import tempfile
 import io
 import glob
+import shutil
+import os
+
+mode_list = ["Create Fully Annotated Video", "Create Time-Lapse Video", "Do Not Create Video"]
+
+
+def upload_mlmodel(filepaths):
+    dest_dir = './ml_model'
+
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+
+    for filepath in filepaths:
+        if os.path.isfile(filepath):
+            shutil.copy(filepath, dest_dir)
+        else:
+            return f'{filepath} is not found'
+
+    return "Upload complete. Please restart gradio_web_ui.py"
 
 
 def inference_image(image, mlmodel_name: str, confidence: float):
@@ -33,14 +52,22 @@ def inference_image(image, mlmodel_name: str, confidence: float):
     return annotated_frame, csv_data
 
 
-def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progress()):
+def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progress=gr.Progress()):
+    global mode_list
     model = RTDETR(mlmodel_name)
     model.info()
     output_files = []
     boxes_info = []
     for video in videos:
         cap = cv2.VideoCapture(video)
-        output_frames = []
+        fps = float(cap.get(cv2.CAP_PROP_FPS))
+
+        if mode_list[0] == mode or mode_list[1] == mode:
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
+            out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
 
         try:
             while cap.isOpened():
@@ -57,8 +84,13 @@ def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progre
                     half=True
                 )
 
-                annotated_frame = results[0].plot()
-                output_frames.append(annotated_frame)
+                if mode_list[0] == mode:
+                    annotated_frame = results[0].plot()
+                    out.write(annotated_frame)
+                elif mode_list[1] == mode and cap.get(cv2.CAP_PROP_POS_FRAMES) % int(fps) == 0:
+                    annotated_frame = results[0].plot()
+                    out.write(annotated_frame)
+
                 results = results[0].cpu()
                 for box_data in results.boxes:
                     box = box_data.xywh[0]
@@ -71,20 +103,7 @@ def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progre
         finally:
             cap.release()
 
-        if not output_frames:
-            return None
-
-        height, width, _ = output_frames[0].shape
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
-        out = cv2.VideoWriter(output_file, fourcc, 30.0, (width, height))
-
-        try:
-            for frame in output_frames:
-                out.write(frame)
-        finally:
-            out.release()
-
+        out.release()
         output_files.append(output_file)
 
     df = pd.DataFrame(boxes_info, columns=["xmin", "ymin", "xmax", "ymax", "confidence", "label"])
@@ -96,6 +115,16 @@ def infer_video(videos, mlmodel_name: str, confidence: float, progress=gr.Progre
 
 
 with gr.Blocks() as main_ui:
+    with gr.Tab("Upload ML Model"):
+        gr.Interface(
+            upload_mlmodel,
+            [
+                gr.File(label="Upload a ml model", file_count="multiple", file_types=["pt", "onnx", "engine"])
+            ],
+            [
+                gr.Textbox(label="Result")
+            ]
+        )
     with gr.Tab("Image Inference"):
         gr.Interface(
             inference_image,
@@ -139,6 +168,11 @@ with gr.Blocks() as main_ui:
                     label="Confidence",
                     step=5,
                     info="Choose between 0% and 100%"
+                ),
+                gr.Radio(
+                    mode_list,
+                    label="Video Creation Options",
+                    info="Choose the type of video to create: fully annotated, time-lapse, or none."
                 ),
             ],
             [
