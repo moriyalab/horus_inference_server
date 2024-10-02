@@ -494,6 +494,23 @@ unicode = ["unicodedata2 (>=15.1.0)"]
 woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
+name = "foxglove-websocket"
+version = "0.1.2"
+description = "Foxglove WebSocket server"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "foxglove-websocket-0.1.2.tar.gz", hash = "sha256:26bc61e026d9f2b6f0fe34df6a798ce95e453cdce5565b730e0591ac1f52fdcb"},
+    {file = "foxglove_websocket-0.1.2-py3-none-any.whl", hash = "sha256:7a231f90ee1ec08c2f6b302270bf45998cc125fb0b16e170a3ea6d1b8b559d1e"},
+]
+
+[package.dependencies]
+websockets = "*"
+
+[package.extras]
+examples = ["foxglove-schemas-protobuf", "protobuf (>=4)", "pyquaternion"]
+
+[[package]]
 name = "fsspec"
 version = "2024.9.0"
 description = "File-system specification"
@@ -2035,4 +2052,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "45fbb5f21ac8bd9152cc19db100bbceb2973fd68cc065ccc3367926e13e80d68"
+content-hash = "e14e18e68799ba04a970fd97fbf3f14ca64106d2ef63fae047daeb5e37ca30e1"
