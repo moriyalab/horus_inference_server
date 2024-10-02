@@ -10,19 +10,21 @@ import os
 
 mode_list = ["Create Fully Annotated Video", "Create Time-Lapse Video", "Do Not Create Video"]
 
+
 def upload_mlmodel(filepaths):
     dest_dir = './ml_model'
-    
+
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
-    
+
     for filepath in filepaths:
         if os.path.isfile(filepath):
             shutil.copy(filepath, dest_dir)
         else:
             return f'{filepath} is not found'
-        
+
     return "Upload complete. Please restart gradio_web_ui.py"
+
 
 def inference_image(image, mlmodel_name: str, confidence: float):
     model = RTDETR(mlmodel_name)
@@ -62,11 +64,10 @@ def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progr
 
         if mode_list[0] == mode or mode_list[1] == mode:
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
             out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
-
 
         try:
             while cap.isOpened():
@@ -169,8 +170,8 @@ with gr.Blocks() as main_ui:
                     info="Choose between 0% and 100%"
                 ),
                 gr.Radio(
-                    mode_list, 
-                    label="Video Creation Options", 
+                    mode_list,
+                    label="Video Creation Options",
                     info="Choose the type of video to create: fully annotated, time-lapse, or none."
                 ),
             ],
