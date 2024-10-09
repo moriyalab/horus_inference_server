@@ -55,7 +55,6 @@ def inference_image(image, mlmodel_name: str, confidence: float):
 def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progress=gr.Progress()):
     global mode_list
     model = RTDETR(mlmodel_name)
-    model.info()
     output_files = []
     boxes_info = []
     for video in videos:
@@ -75,14 +74,15 @@ def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progr
                 progress(cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 if not ret:
                     break
+
                 results = model.track(
                     source=frame,
+                    device="cuda:0",
                     verbose=False,
                     persist=True,
                     tracker="botsort.yaml",
                     conf=confidence / 100,
-                    half=True
-                )
+                    half=True)
 
                 if mode_list[0] == mode:
                     annotated_frame = results[0].plot()
@@ -91,25 +91,29 @@ def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progr
                     annotated_frame = results[0].plot()
                     out.write(annotated_frame)
 
-                results = results[0].cpu()
-                for box_data in results.boxes:
+                for box_data in results[0].cpu().boxes:
                     box = box_data.xywh[0]
                     xmin = max(0, min(int(box[0] - box[2] / 2), 65535))
                     ymin = max(0, min(int(box[1] - box[3] / 2), 65535))
                     xmax = max(0, min(int(box[0] + box[2] / 2), 65535))
                     ymax = max(0, min(int(box[1] + box[3] / 2), 65535))
-                    boxes_info.append([xmin, ymin, xmax, ymax, float(box_data.conf), model.names[int(box_data.cls)]])
+                    timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
+                    boxes_info.append([timestamp, xmin, ymin, xmax, ymax, float(box_data.conf), model.names[int(box_data.cls)]])
 
         finally:
             cap.release()
 
+        df = pd.DataFrame(boxes_info, columns=["timestamp", "xmin", "ymin", "xmax", "ymax", "confidence", "label"])
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        csv_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv').name
+        with open(csv_file, "w", encoding="utf-8") as file:
+            file.write(csv_buffer.getvalue())
+
         out.release()
         output_files.append(output_file)
-
-    df = pd.DataFrame(boxes_info, columns=["xmin", "ymin", "xmax", "ymax", "confidence", "label"])
-    csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False)
-    csv_buffer.getvalue()
+        output_files.append(csv_file)
 
     return output_files
 
