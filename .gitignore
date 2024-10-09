@@ -7,5 +7,7 @@
 *.csv
 *.webp
 *.png
+*.onnx
+*.engine
 
 flagged*/
