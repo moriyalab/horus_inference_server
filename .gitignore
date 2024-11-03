@@ -9,5 +9,6 @@
 *.png
 *.onnx
 *.engine
+*.mcap
 
 flagged*/
