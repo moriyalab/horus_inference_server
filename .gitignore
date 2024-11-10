@@ -11,4 +11,7 @@
 *.engine
 *.mcap
 
-flagged*/
+flagged/
+videos/
+runs/
+results/
