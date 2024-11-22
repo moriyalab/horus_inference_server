@@ -1,50 +1,70 @@
 from threading import Thread, Semaphore
+from queue import Queue
 from ultralytics import RTDETR
 import glob
 import os
 import shutil
-import csv
-from collections import defaultdict
+import gc
+import time
 import pandas as pd
 import io
-import gc
+from collections import defaultdict
+import csv
 
-def process_image_with_thread(image_path, semaphore):
-    with semaphore:
-        print("Processing start: ", image_path)
-        model = RTDETR("ml_model/demo_model.engine")
-        model.predict(
-            image_path, project="./runs", save=False, save_txt=True,
-            save_conf=True, half=True, verbose=True
-        )
-        del model
-        gc.collect()
-        print("Processing end: ", image_path)
+
+def process_image_with_thread(queue, semaphore):
+    model = RTDETR("ml_model/demo_model.engine")
+    while not queue.empty():
+        video_path = queue.get()
+        with semaphore:
+            print("Processing start: ", video_path)
+            for _ in model.predict(
+                video_path, project="./runs", save=False, save_txt=True,
+                save_conf=True, half=False, verbose=False, stream=True, vid_stride=150
+            ):
+                pass
+            print("Processing end: ", video_path)
+            gc.collect()
+        queue.task_done()
+    del model
+
 
 def run_inference():
-    max_threads = 10
+    max_threads = 50
     semaphore = Semaphore(max_threads)
-    threads = []
+    queue = Queue()
 
-    for image_path in glob.glob("./videos_split/*"):
-        thread = Thread(target=process_image_with_thread, args=(image_path, semaphore))
+    # 全ての動画パスをキューに追加
+    for video_path in glob.glob("./videos/*"):
+        queue.put(video_path)
+
+    threads = []
+    for _ in range(max_threads):
+        thread = Thread(target=process_image_with_thread, args=(queue, semaphore))
         threads.append(thread)
         thread.start()
 
+    # 全ての動画が処理されるのを待つ
+    queue.join()
+
+    # スレッドが完全に終了するのを待つ
     for thread in threads:
         thread.join()
 
-# if os.path.exists("./runs"):
-#     shutil.rmtree("./runs")
-# os.makedirs("./runs")
+# ディレクトリのセットアップ
+if os.path.exists("./runs"):
+    shutil.rmtree("./runs")
+os.makedirs("./runs")
 
-# start = time.perf_counter()
-# run_inference()
-# end = time.perf_counter()
-# print(end - start)
+start = time.perf_counter()
+run_inference()
+end = time.perf_counter()
+print(end - start)
+
+# exit()
 
 result_file_paths = glob.glob("./runs/**/*.txt", recursive=True)
-video_file_paths = glob.glob("./videos_split/*")
+video_file_paths = glob.glob("./videos/*")
 video_names = [os.path.splitext(os.path.basename(path))[0] for path in video_file_paths]
 
 annotated_results = []

@@ -82,7 +82,7 @@ def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progr
                     persist=True,
                     tracker="botsort.yaml",
                     conf=confidence / 100,
-                    half=True)
+                    half=False)
 
                 if mode_list[0] == mode:
                     annotated_frame = results[0].plot()
