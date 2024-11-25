@@ -30,11 +30,13 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}_dev:latest --target builder_image .
-          docker build -t ghcr.io/${{ github.repository }}:latest --target release_image .
+          docker build -t ghcr.io/${{ github.repository }}:latest .
+          # docker build -t ghcr.io/${{ github.repository }}_dev:latest --target builder_image .
+          # docker build -t ghcr.io/${{ github.repository }}:latest --target release_image .
 
       - name: Push Docker image
         if: github.event_name == 'push'
         run: |
-          docker push ghcr.io/${{ github.repository }}_dev:latest
           docker push ghcr.io/${{ github.repository }}:latest
+          # docker push ghcr.io/${{ github.repository }}_dev:latest
+          # docker push ghcr.io/${{ github.repository }}:latest

@@ -1,188 +1,116 @@
 import gradio as gr
 import cv2
-from ultralytics import RTDETR
-import pandas as pd
-import tempfile
-import io
-import glob
-import shutil
-import os
 
-mode_list = ["Create Fully Annotated Video", "Create Time-Lapse Video", "Do Not Create Video"]
+from horus import util
+from horus import inference
 
+video_path_ = ""
 
-def upload_mlmodel(filepaths):
-    dest_dir = './ml_model'
-
-    if not os.path.exists(dest_dir):
-        os.makedirs(dest_dir)
-
-    for filepath in filepaths:
-        if os.path.isfile(filepath):
-            shutil.copy(filepath, dest_dir)
-        else:
-            return f'{filepath} is not found'
-
-    return "Upload complete. Please restart gradio_web_ui.py"
+value_x = 0
+value_y = 0
+value_w = 0
+value_h = 0
 
 
-def inference_image(image, mlmodel_name: str, confidence: float):
-    model = RTDETR(mlmodel_name)
-    results = model.predict(
-        source=image,
-        conf=confidence / 100,
-        verbose=False
-        )
-    annotated_frame = results[0].plot()
-    results = results[0].cpu()
+def update_input_video(videoPath: str):
+    global video_path_
+    video_path_ = videoPath
+    cap = cv2.VideoCapture(videoPath)
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    frame = update_target_frame(video_path_, 0, 0, 0, 0)
 
-    boxes_info = []
-    for box_data in results.boxes:
-        box = box_data.xywh[0]
-        xmin = max(0, min(int(box[0] - box[2] / 2), 65535))
-        ymin = max(0, min(int(box[1] - box[3] / 2), 65535))
-        xmax = max(0, min(int(box[0] + box[2] / 2), 65535))
-        ymax = max(0, min(int(box[1] + box[3] / 2), 65535))
-        boxes_info.append([xmin, ymin, xmax, ymax, float(box_data.conf), model.names[int(box_data.cls)]])
-
-    df = pd.DataFrame(boxes_info, columns=["xmin", "ymin", "xmax", "ymax", "confidence", "label"])
-    csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False)
-    csv_data = csv_buffer.getvalue()
-    return annotated_frame, csv_data
+    return gr.update(maximum=width), gr.update(maximum=height), gr.update(maximum=width), gr.update(maximum=height), frame
 
 
-def infer_video(videos, mlmodel_name: str, confidence: float, mode: float, progress=gr.Progress()):
-    global mode_list
-    model = RTDETR(mlmodel_name)
-    output_files = []
-    boxes_info = []
-    for video in videos:
-        cap = cv2.VideoCapture(video)
-        fps = float(cap.get(cv2.CAP_PROP_FPS))
+def update_input_x(value):
+    global video_path_, value_x, value_y, value_w, value_h
+    value_x = value
+    return update_target_frame(video_path_, value_x, value_y, value_w, value_h)
 
-        if mode_list[0] == mode or mode_list[1] == mode:
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
-            out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
 
-        try:
-            while cap.isOpened():
-                ret, frame = cap.read()
-                progress(cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if not ret:
-                    break
+def update_input_y(value):
+    global video_path_, value_x, value_y, value_w, value_h
+    value_y = value
+    return update_target_frame(video_path_, value_x, value_y, value_w, value_h)
 
-                results = model.track(
-                    source=frame,
-                    device="cuda:0",
-                    verbose=False,
-                    persist=True,
-                    tracker="botsort.yaml",
-                    conf=confidence / 100,
-                    half=True)
 
-                if mode_list[0] == mode:
-                    annotated_frame = results[0].plot()
-                    out.write(annotated_frame)
-                elif mode_list[1] == mode and cap.get(cv2.CAP_PROP_POS_FRAMES) % int(fps) == 0:
-                    annotated_frame = results[0].plot()
-                    out.write(annotated_frame)
+def update_input_w(value):
+    global video_path_, value_x, value_y, value_w, value_h
+    value_w = value
+    return update_target_frame(video_path_, value_x, value_y, value_w, value_h)
 
-                for box_data in results[0].cpu().boxes:
-                    box = box_data.xywh[0]
-                    xmin = max(0, min(int(box[0] - box[2] / 2), 65535))
-                    ymin = max(0, min(int(box[1] - box[3] / 2), 65535))
-                    xmax = max(0, min(int(box[0] + box[2] / 2), 65535))
-                    ymax = max(0, min(int(box[1] + box[3] / 2), 65535))
-                    timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
-                    boxes_info.append([timestamp, xmin, ymin, xmax, ymax, float(box_data.conf), model.names[int(box_data.cls)]])
 
-        finally:
-            cap.release()
+def update_input_h(value):
+    global video_path_, value_x, value_y, value_w, value_h
+    value_h = value
+    return update_target_frame(video_path_, value_x, value_y, value_w, value_h)
 
-        df = pd.DataFrame(boxes_info, columns=["timestamp", "xmin", "ymin", "xmax", "ymax", "confidence", "label"])
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
 
-        csv_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv').name
-        with open(csv_file, "w", encoding="utf-8") as file:
-            file.write(csv_buffer.getvalue())
-
-        out.release()
-        output_files.append(output_file)
-        output_files.append(csv_file)
-
-    return output_files
+def update_target_frame(video_path, x, y, w, h):
+    frame = util.get_image_from_video(video_path, 0)
+    start_point = (int(x), int(y))
+    end_point = (int(x + w), int(y + h))
+    color = (255, 0, 0)
+    thickness = 5
+    cv2.rectangle(frame, start_point, end_point, color, thickness)
+    return gr.Image(value=frame)
 
 
 with gr.Blocks() as main_ui:
-    with gr.Tab("Upload ML Model"):
-        gr.Interface(
-            upload_mlmodel,
-            [
-                gr.File(label="Upload a ml model", file_count="multiple", file_types=["pt", "onnx", "engine"])
-            ],
-            [
-                gr.Textbox(label="Result")
-            ]
-        )
-    with gr.Tab("Image Inference"):
-        gr.Interface(
-            inference_image,
-            [
-                gr.Image(type="numpy", label="Upload an Image"),
-                gr.Dropdown(
-                    glob.glob("./ml_model/*"),
-                    value="rtdetr-l.pt",
-                    label="ML Model",
-                    info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
-                ),
-                gr.Slider(
+    with gr.Tab("Video Inference"):
+        with gr.Row():
+            with gr.Column():
+                input_video = gr.File(label="Upload Video", file_count="single", file_types=[".mp4", ".mov", ".mpg"])
+                output_image = gr.Image(type="numpy", label="result image")
+                input_x = gr.Slider(
                     minimum=0,
                     maximum=100,
-                    value=75,
-                    label="Confidence",
-                    step=5,
-                    info="Choose between 0% and 100%"
-                ),
-            ],
-            [
-                gr.Image(type="numpy", label="result image"),
-                gr.Textbox(label="Bounding Boxes CSV"),
-            ]
-        )
-    with gr.Tab("Video Inferemce"):
-        gr.Interface(
-            infer_video,
-            [
-                gr.File(label="Upload a Video", file_count="multiple", file_types=["mp4", "mpg", "MOV"]),
-                gr.Dropdown(
-                    glob.glob("./ml_model/*"),
-                    value="rtdetr-l.pt",
-                    label="ML Model",
-                    info="Please place the RT-DETR model in the ml_model directory under the root directory of this project! It supports extensions like .pt, .onnx, and .engine!"
-                ),
-                gr.Slider(
+                    value=0,
+                    label="Input X",
+                    step=1,
+                )
+                input_y = gr.Slider(
                     minimum=0,
                     maximum=100,
-                    value=75,
-                    label="Confidence",
-                    step=5,
-                    info="Choose between 0% and 100%"
-                ),
-                gr.Radio(
-                    mode_list,
-                    label="Video Creation Options",
-                    info="Choose the type of video to create: fully annotated, time-lapse, or none."
-                ),
-            ],
-            [
-                gr.File(label="Annotated Video"),
-            ]
+                    value=0,
+                    label="Input Y",
+                    step=1,
+                )
+                input_w = gr.Slider(
+                    minimum=0,
+                    maximum=100,
+                    value=0,
+                    label="Input W",
+                    step=1,
+                )
+                input_h = gr.Slider(
+                    minimum=0,
+                    maximum=100,
+                    value=0,
+                    label="Input H",
+                    step=1,
+                )
+                submit_button = gr.Button("Start Inference")
+            with gr.Column():
+                output_video = gr.File()
+
+        input_video.change(
+            update_input_video,
+            inputs=input_video,
+            outputs=[input_x, input_y, input_w, input_h, output_image]
         )
+
+        input_x.change(update_input_x, inputs=input_x, outputs=[output_image])
+        input_y.change(update_input_y, inputs=input_y, outputs=[output_image])
+        input_w.change(update_input_w, inputs=input_w, outputs=[output_image])
+        input_h.change(update_input_h, inputs=input_h, outputs=[output_image])
+
+        submit_button.click(
+            inference.main_inference,
+            inputs=[input_video, input_x, input_y, input_w, input_h],
+            outputs=[output_video])
+
 
 if __name__ == "__main__":
     main_ui.queue().launch(server_name="0.0.0.0")
