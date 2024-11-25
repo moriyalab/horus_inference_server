@@ -11,4 +11,7 @@
 *.engine
 *.mcap
 
-flagged*/
+flagged/
+datasets/
+runs/
+__pycache__/
