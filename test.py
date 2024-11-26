@@ -20,7 +20,7 @@ def process_image_with_thread(queue, semaphore):
             print("Processing start: ", video_path)
             for _ in model.predict(
                 video_path, project="./runs", save=False, save_txt=True,
-                save_conf=True, half=False, verbose=False, stream=True, vid_stride=150
+                save_conf=True, half=False, verbose=False, stream=True, vid_stride=30
             ):
                 pass
             print("Processing end: ", video_path)
@@ -61,7 +61,7 @@ run_inference()
 end = time.perf_counter()
 print(end - start)
 
-# exit()
+exit()
 
 result_file_paths = glob.glob("./runs/**/*.txt", recursive=True)
 video_file_paths = glob.glob("./videos/*")
