@@ -113,4 +113,4 @@ with gr.Blocks() as main_ui:
 
 
 if __name__ == "__main__":
-    main_ui.queue().launch(server_name="0.0.0.0")
+    main_ui.queue().launch(server_name="0.0.0.0", server_port=7861)
