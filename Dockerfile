@@ -1,8 +1,11 @@
 FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
 
-RUN apt update && apt install -y git vim curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
+    git \
+    vim \
+    curl \
+    wget \
+    xz-utils \
     libavutil-dev \
     libavcodec-dev \
     libavformat-dev \
@@ -11,6 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev
 RUN pip install --upgrade pip setuptools
+
+RUN wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz \
+      && tar xvf ./ffmpeg-git-amd64-static.tar.xz \
+      && cp ./ffmpeg*amd64-static/ffmpeg /usr/local/bin/
 
 RUN git clone -b master --single-branch --depth=1 https://github.com/moriyalab/samurai.git
 RUN cd /workspace/samurai/sam2 && \
