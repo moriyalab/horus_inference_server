@@ -32,7 +32,7 @@ PLATFORM="$(uname -m)"
 if [ $PLATFORM = "x86_64" ]; then
     echo "x86"
     docker pull ghcr.io/moriyalab/horus_inference_server:latest
-    docker run -it --rm --gpus all --runtime nvidia --shm-size=32G -v $ROOT:/workspace/horus_inference_server -w /workspace/horus_inference_server --network host ghcr.io/moriyalab/horus_inference_server:latest
+    docker run -it --rm --gpus all --runtime nvidia -u $(id -u):$(id -g) --shm-size=32G -v $ROOT:/workspace/horus_inference_server -w /workspace/horus_inference_server --network host ghcr.io/moriyalab/horus_inference_server:latest
 else
     echo "Not Support Platform. Only support x86."
 fi
