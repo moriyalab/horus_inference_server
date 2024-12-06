@@ -1,3 +1,6 @@
+FROM ghcr.io/moriyalab/docker-ffmpeg:amd64-7.0.1-cli-ls144 as buildstage
+COPY --from=buildstage /buildout/ /
+
 FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
