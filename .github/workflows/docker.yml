@@ -36,12 +36,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
+        if: github.event_name != 'push'
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:latest .
+          docker build  .
 
       - name: Push Docker image
         if: github.event_name == 'push'
         run: |
-          docker push ghcr.io/${{ github.repository }}:latest
+          # docker push ghcr.io/${{ github.repository }}:latest
           docker build -t ${{ secrets.DOCKER_USERNAME }}/horus_inference_server:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/horus_inference_server:latest
