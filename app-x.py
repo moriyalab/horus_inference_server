@@ -8,7 +8,7 @@ with gr.Blocks() as main_ui:
             with gr.Column():
                 input_videos = gr.File(label="Upload Video", file_count="multiple", file_types=[".mp4", ".mov", ".mpg"])
                 input_project_name = gr.Text(label="Project Name")
-                
+
                 upload_button = gr.Button("Start Upload")
             with gr.Column():
                 output_status = gr.Text(label="Status")

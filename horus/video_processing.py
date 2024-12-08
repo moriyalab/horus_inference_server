@@ -16,7 +16,7 @@ def make_video_list_file(video_files: list[str]):
         video_path = p.resolve()
 
         f.write(f"file '{video_path}'\n")
-    
+
     return file_name
 
 
@@ -31,7 +31,7 @@ def run_ffmpeg_concat_av1(input_list: str, output_file: str, preset="fast"):
         "-b:v", "500k",
         output_file
     ]
-    
+
     try:
         result = subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print("ffmpegコマンドの実行に成功しました。")
@@ -76,4 +76,3 @@ def video_processing_ui(video_files: list[str], project_name: str):
     run_ffmpeg_timelaps_av1(merge_video_path, timelaps_video_path, 15 * 60)
 
     return video_files
-

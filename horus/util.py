@@ -49,6 +49,7 @@ def video_to_images(video_path: str):
 
     return output_dir
 
+
 def natural_sort(file_list):
     def alphanum_key(key):
         filename = os.path.basename(key)
