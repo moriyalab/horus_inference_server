@@ -61,7 +61,7 @@ with gr.Blocks() as main_ui:
     with gr.Tab("Video Inference"):
         with gr.Row():
             with gr.Column():
-                input_video = gr.File(label="Upload Video", file_count="single", file_types=[".mp4", ".mov", ".mpg"])
+                input_video = gr.File(label="Upload Video", file_count="single", file_types=[".mp4", ".mov", ".mpg", "webm"])
                 output_image = gr.Image(type="numpy", label="result image")
                 input_x = gr.Slider(
                     minimum=0,
@@ -113,4 +113,4 @@ with gr.Blocks() as main_ui:
 
 
 if __name__ == "__main__":
-    main_ui.queue().launch(server_name="0.0.0.0")
+    main_ui.queue().launch(server_name="0.0.0.0", server_port=7861)

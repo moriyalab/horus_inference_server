@@ -15,3 +15,4 @@ flagged/
 datasets/
 runs/
 __pycache__/
+horus_prj-*/

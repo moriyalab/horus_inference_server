@@ -1,6 +1,7 @@
 import cv2
 import os
 import uuid
+import re
 
 
 def get_image_from_video(video_path: str, frame_id: int):
@@ -47,3 +48,9 @@ def video_to_images(video_path: str):
     cap.release()
 
     return output_dir
+
+def natural_sort(file_list):
+    def alphanum_key(key):
+        filename = os.path.basename(key)
+        return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', filename)]
+    return sorted(file_list, key=alphanum_key)
