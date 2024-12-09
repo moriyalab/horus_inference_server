@@ -56,6 +56,7 @@ def natural_sort(file_list):
         return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', filename)]
     return sorted(file_list, key=alphanum_key)
 
+
 def remove_files(file_list: list[str]):
     for file in file_list:
         try:

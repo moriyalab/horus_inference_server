@@ -23,27 +23,29 @@ def make_project(project_name: str, project_host_dir="/workspace/horus_inference
     print(f"プロジェクトファイルが作成されました: {project_description_file_path}")
     return project_dir
 
+
 def get_projects_str(project_host_dir="/workspace/horus_inference_server/projects"):
-    project_dir_list = glob.glob(os.path.join(project_host_dir , "*"))
-    
+    project_dir_list = glob.glob(os.path.join(project_host_dir, "*"))
+
     prj_names = []
     for project in project_dir_list:
         with open(os.path.join(project, "horus.yaml"), "r") as yml:
             prj_config = yaml.safe_load(yml)
             prj_names.append(prj_config["project_name"])
-    
+
     return prj_names
 
+
 def get_projects_db(project_host_dir="/workspace/horus_inference_server/projects"):
-    project_dir_list = glob.glob(os.path.join(project_host_dir , "*"))
-    
+    project_dir_list = glob.glob(os.path.join(project_host_dir, "*"))
+
     project_database = {}
     for project_path in project_dir_list:
         with open(os.path.join(project_path, "horus.yaml"), "r") as yml:
             prj_config = yaml.safe_load(yml)
             prj_config["project_path"] = project_path
             project_database[prj_config["project_name"]] = prj_config
-    
+
     return project_database
 
 
@@ -55,6 +57,7 @@ def edit_project_info(key: str, data: str, project_dir: str):
 
         with open(prj_file, 'w') as f:
             yaml.dump(project_data, f, default_flow_style=False, allow_unicode=True)
+
 
 def remove_project(project_name: str):
     database = get_projects_db()
@@ -70,4 +73,3 @@ def remove_project(project_name: str):
         print(result.stdout)
     except subprocess.CalledProcessError as e:
         print(e.stderr)
-

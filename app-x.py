@@ -3,6 +3,7 @@ import gradio as gr
 from horus import video_processing
 from horus import project_manager
 
+
 def update_db_select(input):
     db = project_manager.get_projects_db()
     vpath = os.path.join(db[input]["project_path"], db[input]["timelaps_video_name"])
@@ -40,7 +41,7 @@ with gr.Blocks() as main_ui:
             video_processing.video_processing_ui,
             inputs=[input_videos, input_project_name],
             outputs=[output_status])
-        
+
     with gr.Tab("Edit Database"):
         with gr.Row():
             with gr.Column():
@@ -54,17 +55,15 @@ with gr.Blocks() as main_ui:
 
                 remove_project = gr.Button("Remove Project", variant="stop")
 
-                
             with gr.Column():
                 preview_video = gr.Video(label="Preview Video")
 
-
         select_project.change(
-            update_db_select, 
-            inputs=select_project, 
+            update_db_select,
+            inputs=select_project,
             outputs=[preview_video, output_create_date, output_project_name])
-        reload_prj_list.click(update_reload_prj_list,inputs=[],outputs=[select_project, preview_video])
-        remove_project.click(remove_project_ui,inputs=[select_project],outputs=[select_project, preview_video, output_create_date, output_project_name])
+        reload_prj_list.click(update_reload_prj_list, inputs=[], outputs=[select_project, preview_video])
+        remove_project.click(remove_project_ui, inputs=[select_project], outputs=[select_project, preview_video, output_create_date, output_project_name])
 
 
 if __name__ == "__main__":
