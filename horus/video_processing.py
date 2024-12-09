@@ -50,8 +50,8 @@ def run_ffmpeg_timelaps_av1(input_file: str, output_file: str, max_time_sec: int
         "ffmpeg",
         "-i", input_file,
         "-r", "30",
-        "-c:v", "av1_nvenc",
-        "-b:v", "500k",
+        "-c:v", "h264_nvenc",
+        "-b:v", "700k",
         "-filter:v", f"setpts={(1.0 / scale)}*PTS",
         output_file
     ]
@@ -72,7 +72,9 @@ def video_processing_ui(video_files: list[str], project_name: str):
     video_list_path = make_video_list_file(video_files)
     merge_video_path = os.path.join(project_dir, "all_video_merge.webm")
     run_ffmpeg_concat_av1(video_list_path, merge_video_path)
-    timelaps_video_path = os.path.join(project_dir, "timelaps.webm")
+    timelaps_video_path = os.path.join(project_dir, "timelaps.mp4")
     run_ffmpeg_timelaps_av1(merge_video_path, timelaps_video_path, 15 * 60)
+
+    util.remove_files(video_files)
 
     return video_files
