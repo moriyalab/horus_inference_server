@@ -70,13 +70,15 @@ def video_processing_ui(video_files: list[str], project_name: str):
 
     video_files = util.natural_sort(video_files)
     video_list_path = make_video_list_file(video_files)
-    merge_video_path = os.path.join(project_dir, "all_video_merge.webm")
+    MERGE_V_NAME = "all_video_merge.webm"
+    merge_video_path = os.path.join(project_dir, MERGE_V_NAME)
     run_ffmpeg_concat_av1(video_list_path, merge_video_path)
-    project_manager.edit_project_info("merge_video_name", "all_video_merge.webm", project_dir)
+    project_manager.edit_project_info("merge_video_name", MERGE_V_NAME, project_dir)
 
-    timelaps_video_path = os.path.join(project_dir, "timelaps.mp4")
-    run_ffmpeg_timelaps_av1(merge_video_path, timelaps_video_path, 15 * 60)
-    project_manager.edit_project_info("timelaps_video_name", "timelaps.mp4", project_dir)
+    TIMELAPS_V_NAME = "timelaps.mp4"
+    timelaps_video_path = os.path.join(project_dir, TIMELAPS_V_NAME)
+    run_ffmpeg_timelaps_av1(merge_video_path, timelaps_video_path, 5 * 60)
+    project_manager.edit_project_info("timelaps_video_name", TIMELAPS_V_NAME, project_dir)
 
     util.remove_files(video_files)
 
