@@ -86,7 +86,6 @@ def update_input_video(input: str):
     return gr.update(maximum=width), gr.update(maximum=height), gr.update(maximum=width), gr.update(maximum=height), frame
 
 
-
 with gr.Blocks() as main_ui:
     with gr.Tab("Upload Video to Database"):
         with gr.Row():
@@ -126,7 +125,7 @@ with gr.Blocks() as main_ui:
         reload_prj_list.click(update_reload_prj_list, inputs=[], outputs=[select_project, preview_video])
         remove_project.click(remove_project_ui, inputs=[select_project], outputs=[select_project, preview_video, output_create_date, output_project_name])
 
-    with gr.Tab("Video Inference"):
+    with gr.Tab("Build Base Dataset"):
         with gr.Row():
             with gr.Column():
                 reload_prj_list_vinf = gr.Button("Reload Project List")

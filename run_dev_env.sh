@@ -32,7 +32,16 @@ PLATFORM="$(uname -m)"
 if [ $PLATFORM = "x86_64" ]; then
     echo "x86"
     docker pull takanotaiga/horus_inference_server:latest
-    docker run -it --rm --gpus all,capabilities=video --runtime nvidia --shm-size=32G -u $(id -u):$(id -g) -v $ROOT:/workspace/horus_inference_server -w /workspace/horus_inference_server --network host takanotaiga/horus_inference_server:latest
+    docker run -it --rm \
+            --gpus all,capabilities=video \
+            --env="DISPLAY=$DISPLAY" \
+            --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+            --runtime nvidia --shm-size=32G \
+            -u $(id -u):$(id -g) \
+            -v $ROOT:/workspace/horus_inference_server \
+            -w /workspace/horus_inference_server \
+            --network host \
+            takanotaiga/horus_inference_server:latest
 else
     echo "Not Support Platform. Only support x86."
 fi
