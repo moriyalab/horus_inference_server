@@ -45,6 +45,10 @@ def save_yolo_format(bboxes, object_name, frame, frame_id, project_path, img_wid
     cv2.imwrite(image_path, frame)
 
     label_data = open_yaml(label_path)
+
+    if "annotations" not in label_data:
+        label_data["annotations"] = {}
+
     label_data["image_file"] = image_name
     for _, bbox in bboxes.items():
         x_min, y_min, width, height = bbox
@@ -53,7 +57,7 @@ def save_yolo_format(bboxes, object_name, frame, frame_id, project_path, img_wid
         norm_width = width / img_width
         norm_height = height / img_height
 
-        label_data[object_name] = {
+        label_data["annotations"][object_name] = {
             "x_center" : x_center,
             "y_center" : y_center,
             "norm_width" : norm_width,

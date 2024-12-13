@@ -20,24 +20,26 @@ import cv2
 
 # # 終了処理
 # cap.release()
+from horus import dataset_manager
+dataset_manager.main()
 
-# from ultralytics import RTDETR
+from ultralytics import RTDETR
 
-# # Load a COCO-pretrained RT-DETR-l model
-# model = RTDETR("rtdetr-l.pt")
+# Load a COCO-pretrained RT-DETR-l model
+model = RTDETR("rtdetr-l.pt")
 
-# # Display model information (optional)
-# model.info()
+# Display model information (optional)
+model.info()
 
-# # Train the model on the COCO8 example dataset for 100 epochs
-# results = model.train(data="demo.yml", 
-#                       epochs=5, 
-#                       name="horus_project",
-#                       project="./runs",
-#                       exist_ok=True,
-#                       imgsz=640)
-import shutil
-import random
+# Train the model on the COCO8 example dataset for 100 epochs
+results = model.train(data="/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/dataset_for_yolo.yaml", 
+                      epochs=5, 
+                      name="horus_project",
+                      project="./runs",
+                      exist_ok=True,
+                      imgsz=640)
+# import shutil
+# import random
 
 # def yolo2ultralytics():
 #     output_yolo_dir = './datasets/horus_datasets'
@@ -64,13 +66,20 @@ import random
 # yolo2ultralytics()
 
 
-import yaml
+# import yaml
 
-if not os.path.isfile('config.yml'):
-    with open('config.yml', mode='w') as f:
-        f.close()
-with open('config.yml', 'r') as yml:
-    config = yaml.safe_load(yml)
-    if config == None:
-        config = {}
-    print(config)
+# if not os.path.isfile('config.yml'):
+#     with open('config.yml', mode='w') as f:
+#         f.close()
+# with open('config.yml', 'r') as yml:
+#     config = yaml.safe_load(yml)
+#     if config == None:
+#         config = {}
+#     print(config)
+
+
+# from horus import dataset_manager
+# dataset_manager.main()
+# from horus import project_manager
+# database = project_manager.get_projects_db()
+# print(database["2024-10-08"]["project_path"])
