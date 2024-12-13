@@ -21,23 +21,21 @@ import cv2
 # # 終了処理
 # cap.release()
 
-from ultralytics import RTDETR
+# from ultralytics import RTDETR
 
-# Load a COCO-pretrained RT-DETR-l model
-model = RTDETR("rtdetr-l.pt")
+# # Load a COCO-pretrained RT-DETR-l model
+# model = RTDETR("rtdetr-l.pt")
 
-# Display model information (optional)
-model.info()
+# # Display model information (optional)
+# model.info()
 
-# Train the model on the COCO8 example dataset for 100 epochs
-results = model.train(data="demo.yml", 
-                      batch=0.8, 
-                      cache=True, 
-                      epochs=10, 
-                      name="horus_project",
-                      project="./runs",
-                      exist_ok=True,
-                      imgsz=640)
+# # Train the model on the COCO8 example dataset for 100 epochs
+# results = model.train(data="demo.yml", 
+#                       epochs=5, 
+#                       name="horus_project",
+#                       project="./runs",
+#                       exist_ok=True,
+#                       imgsz=640)
 import shutil
 import random
 
@@ -64,3 +62,15 @@ import random
 
 
 # yolo2ultralytics()
+
+
+import yaml
+
+if not os.path.isfile('config.yml'):
+    with open('config.yml', mode='w') as f:
+        f.close()
+with open('config.yml', 'r') as yml:
+    config = yaml.safe_load(yml)
+    if config == None:
+        config = {}
+    print(config)

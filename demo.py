@@ -2,10 +2,10 @@ import cv2
 from ultralytics import RTDETR
 
 # モデルのロード
-model = RTDETR('./runs/horus_project/weights/best.pt')
+model = RTDETR('./runs/horus_project/weights/last.pt')
 
 # 動画ファイルのパス
-video_path = './all_video_merge.webm'
+video_path = '/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/timelaps.mp4'
 
 # 動画ファイルを開く
 cap = cv2.VideoCapture(video_path)

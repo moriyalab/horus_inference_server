@@ -132,6 +132,7 @@ with gr.Blocks() as main_ui:
                 select_project_vinf = gr.Radio(
                         choices=project_manager.get_projects_str(),
                         label="Projects")
+                input_object_name = gr.Text(label="Object Name")
                 output_image = gr.Image(type="numpy", label="result image")
                 input_x = gr.Slider(
                     minimum=0,
@@ -179,7 +180,7 @@ with gr.Blocks() as main_ui:
 
         submit_button.click(
             inference.main_inference,
-            inputs=[select_project_vinf, input_x, input_y, input_w, input_h],
+            inputs=[select_project_vinf, input_object_name, input_x, input_y, input_w, input_h],
             outputs=[output_video])
 
 if __name__ == "__main__":

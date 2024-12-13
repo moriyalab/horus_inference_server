@@ -5,52 +5,66 @@ import cv2
 import torch
 import tempfile
 import sys
-import random
+import yaml
 sys.path.append("/workspace/samurai/sam2")
 from sam2.build_sam import build_sam2_video_predictor
 
 color = [(255, 0, 0)]
 
 
-def project_path_to_dataset_dir(project_path: str):
-    dataset_path = os.path.join(project_path, "horus_dataset")
-    image_train_path = os.path.join(dataset_path, "images/train")
-    image_val_path = os.path.join(dataset_path, "images/val")
-    label_train_path = os.path.join(dataset_path, "labels/train")
-    label_val_path = os.path.join(dataset_path, "labels/val")
-    os.makedirs(dataset_path, exist_ok=True)
-    os.makedirs(image_train_path, exist_ok=True)
-    os.makedirs(image_val_path, exist_ok=True)
-    os.makedirs(label_train_path, exist_ok=True)
-    os.makedirs(label_val_path, exist_ok=True)
+def project_path_to_dataset_dir(project_path: str, frame_id: int):
+    dataset_dir = os.path.join(project_path, "horus_dataset")
+    image_dir = os.path.join(dataset_dir, "images")
+    label_dir = os.path.join(dataset_dir, "labels")
+    os.makedirs(dataset_dir, exist_ok=True)
+    os.makedirs(image_dir, exist_ok=True)
+    os.makedirs(label_dir, exist_ok=True)
 
-    if random.uniform(0, 100) > 20:
-        return image_train_path, label_train_path
-    else:
-        return image_val_path, label_val_path
+    image_name = f"{frame_id:08d}.jpg"
+    label_name = f"{frame_id:08d}.yaml"
+    image_path = os.path.join(image_dir, image_name)
+    label_path = os.path.join(label_dir, label_name)
+
+    return image_path, label_path, image_name, label_name
 
 
-def save_yolo_format(bboxes, frame, frame_id, project_path, img_width, img_height):
-    save_img_dir, save_label_dir = project_path_to_dataset_dir(project_path)
-    save_label_path = os.path.join(save_label_dir, f"{frame_id:08d}.txt")
-    save_image_path = os.path.join(save_img_dir, f"{frame_id:08d}.jpg")
-
-    cv2.imwrite(save_image_path, frame)
-
-    with open(save_label_path, "w") as f:
-        for obj_id, bbox in bboxes.items():
-            x_min, y_min, width, height = bbox
-            x_center = (x_min + width / 2) / img_width
-            y_center = (y_min + height / 2) / img_height
-            norm_width = width / img_width
-            norm_height = height / img_height
-
-            f.write(f"{obj_id} {x_center:.6f} {y_center:.6f} {norm_width:.6f} {norm_height:.6f}\n")
-
-    f.close()
+def open_yaml(path: str):
+    if not os.path.isfile(path):
+        with open(path, mode='w') as f:
+            f.close()
+    with open(path, 'r') as yml:
+        config = yaml.safe_load(yml)
+        if config == None:
+            config = {}
+        return config
 
 
-def samurai_inference(video_folder_path: str, project_path: str,  x: int, y: int, w: int, h: int):
+def save_yolo_format(bboxes, object_name, frame, frame_id, project_path, img_width, img_height):
+    image_path, label_path, image_name, _ = project_path_to_dataset_dir(project_path, frame_id)
+
+    cv2.imwrite(image_path, frame)
+
+    label_data = open_yaml(label_path)
+    label_data["image_file"] = image_name
+    for _, bbox in bboxes.items():
+        x_min, y_min, width, height = bbox
+        x_center = (x_min + width / 2) / img_width
+        y_center = (y_min + height / 2) / img_height
+        norm_width = width / img_width
+        norm_height = height / img_height
+
+        label_data[object_name] = {
+            "x_center" : x_center,
+            "y_center" : y_center,
+            "norm_width" : norm_width,
+            "norm_height" : norm_height,
+        }
+
+    with open(label_path, "w") as yaml_file:
+        yaml.dump(label_data, yaml_file, default_flow_style=False, allow_unicode=True)
+
+
+def samurai_inference(video_folder_path: str, object_name: str, project_path: str,  x: int, y: int, w: int, h: int):
     MODEL_PATH = "/workspace/samurai/sam2/checkpoints/sam2.1_hiera_base_plus.pt"
     MODEL_CONFIG = "configs/samurai/sam2.1_hiera_b+.yaml"
 
@@ -88,6 +102,7 @@ def samurai_inference(video_folder_path: str, project_path: str,  x: int, y: int
 
             save_yolo_format(
                 bboxes=bbox_to_vis,
+                object_name=object_name,
                 frame_id=frame_idx,
                 frame=loaded_frames[frame_idx],
                 project_path=project_path,
