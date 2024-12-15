@@ -1,7 +1,0 @@
-path: /workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/horus_dataset
-train:  images/train
-val: images/val
-
-# Classes
-names:
-  0: embryo

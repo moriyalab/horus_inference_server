@@ -1,85 +1,64 @@
-# from horus import video_processing
+# from ultralytics import RTDETR
+# import time
+# import cv2
 
-# video_processing.run_ffmpeg_timelaps_h264("/workspace/horus_inference_server/all_video_merge.webm", "/workspace/horus_inference_server/output.mp4", 60)
-import os
-import cv2
+# from horus import util
+
+# # モデルのロード
+# model = RTDETR('/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/train_result/weights/best.engine')
+# # video_path = '/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/all_video_merge.webm'
+# video_path = '/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/timelaps.mp4'
+
+# cap = cv2.VideoCapture(video_path)
+# width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+# height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# cap.release()
+
+# start = time.perf_counter()
+# fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+# out = cv2.VideoWriter("./out.mp4", fourcc, 30, (width, height))
 
 
-# cap = cv2.VideoCapture("./timelaps.mp4")
-# frame_count = 0
+# # inf_data_all = {}
+# for index, results in enumerate(model.predict(video_path, stream=True, verbose=False)):
+#     # inf_data_all[index] = {}
+#     # for box_data in results.boxes:
+#     #     box = box_data.xywh[0]
+#     #     x_center = max(0, min(int(box[0]), 65535))
+#     #     y_center = max(0, min(int(box[1]), 65535))
+#     #     width = max(0, min(int(box[2]), 65535))
+#     #     height = max(0, min(int(box[3]), 65535))
+#     #     inf_data_all[index][int(box_data.cls)] = {
+#     #         "x_center": x_center,
+#     #         "y_center": y_center,
+#     #         "width": width,
+#     #         "height": height
+#     #     }
 
-# while cap.isOpened():
-#     ret, frame = cap.read()
-#     if not ret:
+#     annotated_frame = results.plot()
+#     cv2.imshow("RT-DETR Inference", annotated_frame)
+#     out.write(annotated_frame)
+
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
 #         break
 
-#     output_path = os.path.join("./images", f"{frame_count:08d}.jpg")
-#     cv2.imwrite(output_path, frame)
 
-#     frame_count += 1
+#     print(index)
 
-# # 終了処理
-# cap.release()
-from horus import dataset_manager
-dataset_manager.main()
+# out.release()
 
-from ultralytics import RTDETR
+# # util.write_yaml("./out.yaml", inf_data_all)
+# end = time.perf_counter()
+# print(end - start)
 
-# Load a COCO-pretrained RT-DETR-l model
-model = RTDETR("rtdetr-l.pt")
+import os
+import gradio as gr
+import cv2
+import glob
+import tempfile
+from horus import project_manager
 
-# Display model information (optional)
-model.info()
+project_data = project_manager.get_projects_db()["2024-10-08"]
+train_result_dir = os.path.join(project_data["project_path"], "train_result")
 
-# Train the model on the COCO8 example dataset for 100 epochs
-results = model.train(data="/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/dataset_for_yolo.yaml", 
-                      epochs=5, 
-                      name="horus_project",
-                      project="./runs",
-                      exist_ok=True,
-                      imgsz=640)
-# import shutil
-# import random
-
-# def yolo2ultralytics():
-#     output_yolo_dir = './datasets/horus_datasets'
-
-#     if not os.path.exists(output_yolo_dir):
-#         os.makedirs(output_yolo_dir, exist_ok=True)
-#         os.makedirs(output_yolo_dir + "/images/train", exist_ok=True)
-#         os.makedirs(output_yolo_dir + "/images/val", exist_ok=True)
-#         os.makedirs(output_yolo_dir + "/labels/train", exist_ok=True)
-#         os.makedirs(output_yolo_dir + "/labels/val", exist_ok=True)
-
-#     files = os.listdir("./yolo_annotations")
-#     for file in files:
-#         label_file_path = os.path.join("./yolo_annotations", file)
-#         image_file_path = os.path.join('./images', file.replace(".txt", ".jpg"))
-#         if random.uniform(0, 100) > 20:
-#             shutil.copy(label_file_path, output_yolo_dir + "/labels/train")
-#             shutil.copy(image_file_path, output_yolo_dir + "/images/train")
-#         else:
-#             shutil.copy(label_file_path, output_yolo_dir + "/labels/val")
-#             shutil.copy(image_file_path, output_yolo_dir + "/images/val")
-
-
-# yolo2ultralytics()
-
-
-# import yaml
-
-# if not os.path.isfile('config.yml'):
-#     with open('config.yml', mode='w') as f:
-#         f.close()
-# with open('config.yml', 'r') as yml:
-#     config = yaml.safe_load(yml)
-#     if config == None:
-#         config = {}
-#     print(config)
-
-
-# from horus import dataset_manager
-# dataset_manager.main()
-# from horus import project_manager
-# database = project_manager.get_projects_db()
-# print(database["2024-10-08"]["project_path"])
+print(glob.glob(os.path.join(train_result_dir, "**/*.engine"))[0])

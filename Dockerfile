@@ -134,3 +134,8 @@ RUN git clone -b master --single-branch --depth=1 https://github.com/moriyalab/s
 RUN cd /workspace/samurai/sam2/checkpoints && \
     ./download_ckpts.sh && \
     cd ..
+
+RUN pip install "onnx>=1.12.0"
+RUN pip install --upgrade pip setuptools wheel
+# RUN pip install nvidia-pyindex --use-pep517
+RUN pip install tensorrt-cu12 --use-pep517

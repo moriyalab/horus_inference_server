@@ -1,10 +1,10 @@
-import yaml
 import os
 import glob
 import shutil
 import random
 
 from horus import project_manager
+from horus import util
 
 def get_label_data(project_path: str):
     labels_dir = os.path.join(project_path, "horus_dataset/labels")
@@ -20,10 +20,11 @@ def get_image_path(project_path: str):
 
 def get_all_label_data(label_path_list: list[str]):
     all_label_data = {}
+
     for filepath in label_path_list:
-        with open(filepath, "r") as yml:
-            label_data = yaml.safe_load(yml)
-            all_label_data[label_data["image_file"]] = label_data["annotations"]
+        label_data = util.read_yaml(filepath)
+        all_label_data[label_data["image_file"]] = label_data["annotations"]
+
     return all_label_data
 
 
@@ -40,8 +41,12 @@ def get_all_class(all_label_data, images_path_list):
 
     return cls_list_with_index
 
-def project_path_to_dataset_dir(project_path: str):
+def get_dataset_dir(project_path: str):
     dataset_path = os.path.join(project_path, "dataset_for_yolo")
+    return dataset_path
+
+def project_path_to_dataset_dir(project_path: str):
+    dataset_path = get_dataset_dir(project_path)
     image_train_path = os.path.join(dataset_path, "images/train")
     image_val_path = os.path.join(dataset_path, "images/val")
     label_train_path = os.path.join(dataset_path, "labels/train")
@@ -74,13 +79,14 @@ def make_dataset_yaml(project_path: str, cls_list):
         "names" : names
     }
 
-    with open(os.path.join(project_path, "dataset_for_yolo.yaml"), "w") as yaml_file:
-        yaml.dump(config_data, yaml_file, default_flow_style=False, allow_unicode=True)
+    yaml_path = os.path.join(project_path, "dataset_for_yolo.yaml")
+    util.write_yaml(yaml_path, config_data)
+    return yaml_path
 
 
-def main():
-    database = project_manager.get_projects_db()
-    project_path = database["2024-10-08"]["project_path"]
+def convert_to_yolo_dataset(project_name: str):
+    project_data = project_manager.get_projects_db()[project_name]
+    project_path = project_data["project_path"]
 
     label_path_list = get_label_data(project_path)
     images_path_list = get_image_path(project_path)
@@ -110,4 +116,13 @@ def main():
 
         f.close()
 
-    make_dataset_yaml(project_path, cls_list)
+    config_file_path = make_dataset_yaml(project_path, cls_list)
+    dataset_dir =  get_dataset_dir(project_path)
+    project_manager.edit_project_info_dict(
+        key="yolo_dataset", 
+        project_dir=project_path, 
+        data= {
+            "config_file": os.path.basename(config_file_path),
+            "dataset_root": os.path.basename(dataset_dir)
+        })
+

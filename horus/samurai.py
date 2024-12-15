@@ -5,7 +5,9 @@ import cv2
 import torch
 import tempfile
 import sys
-import yaml
+import gradio as gr
+from horus import util
+from horus import video_processing
 sys.path.append("/workspace/samurai/sam2")
 from sam2.build_sam import build_sam2_video_predictor
 
@@ -28,23 +30,16 @@ def project_path_to_dataset_dir(project_path: str, frame_id: int):
     return image_path, label_path, image_name, label_name
 
 
-def open_yaml(path: str):
-    if not os.path.isfile(path):
-        with open(path, mode='w') as f:
-            f.close()
-    with open(path, 'r') as yml:
-        config = yaml.safe_load(yml)
-        if config == None:
-            config = {}
-        return config
-
-
-def save_yolo_format(bboxes, object_name, frame, frame_id, project_path, img_width, img_height):
+def save_yolo_format(
+        bboxes, object_name: str, 
+        frame, frame_id: int, 
+        project_path: str, 
+        img_width, img_height):
     image_path, label_path, image_name, _ = project_path_to_dataset_dir(project_path, frame_id)
 
     cv2.imwrite(image_path, frame)
 
-    label_data = open_yaml(label_path)
+    label_data = util.read_yaml(label_path)
 
     if "annotations" not in label_data:
         label_data["annotations"] = {}
@@ -63,12 +58,13 @@ def save_yolo_format(bboxes, object_name, frame, frame_id, project_path, img_wid
             "norm_width" : norm_width,
             "norm_height" : norm_height,
         }
-
-    with open(label_path, "w") as yaml_file:
-        yaml.dump(label_data, yaml_file, default_flow_style=False, allow_unicode=True)
+    util.write_yaml(label_path, label_data)
 
 
-def samurai_inference(video_folder_path: str, object_name: str, project_path: str,  x: int, y: int, w: int, h: int):
+def samurai_inference(
+        video_folder_path: str, object_name: str, project_path: str,  
+        x: int, y: int, w: int, h: int,
+        progress=gr.Progress()):
     MODEL_PATH = "/workspace/samurai/sam2/checkpoints/sam2.1_hiera_base_plus.pt"
     MODEL_CONFIG = "configs/samurai/sam2.1_hiera_b+.yaml"
 
@@ -77,17 +73,20 @@ def samurai_inference(video_folder_path: str, object_name: str, project_path: st
 
     frames = sorted([osp.join(video_folder_path, f) for f in os.listdir(video_folder_path) if f.endswith(".jpg")])
     loaded_frames = [cv2.imread(frame_path) for frame_path in frames]
-    height, width = loaded_frames[0].shape[:2]
+    frame_count = len(loaded_frames)
+    image_height, image_width = loaded_frames[0].shape[:2]
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     result_video_file_name = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
-    out = cv2.VideoWriter(result_video_file_name, fourcc, 30, (width, height))
+    out = cv2.VideoWriter(result_video_file_name, fourcc, 30, (image_width, image_height))
 
     with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
         state = predictor.init_state(video_folder_path, offload_video_to_cpu=True, offload_state_to_cpu=True, async_loading_frames=True)
         _, _, masks = predictor.add_new_points_or_box(state, box=bbox_prompt, frame_idx=0, obj_id=0)
 
         for frame_idx, object_ids, masks in predictor.propagate_in_video(state):
+            progress(frame_idx / frame_count)
+
             mask_to_vis = {}
             bbox_to_vis = {}
 
@@ -110,21 +109,26 @@ def samurai_inference(video_folder_path: str, object_name: str, project_path: st
                 frame_id=frame_idx,
                 frame=loaded_frames[frame_idx],
                 project_path=project_path,
-                img_width=width,
-                img_height=height
+                img_width=image_width,
+                img_height=image_height
                 )
 
             img = loaded_frames[frame_idx]
             for obj_id, mask in mask_to_vis.items():
-                mask_img = np.zeros((height, width, 3), np.uint8)
-                mask_img[mask] = color[(obj_id + 1) % len(color)]
+                mask_img = np.zeros_like(loaded_frames[frame_idx], dtype=np.uint8)
+                mask_img[mask.astype(bool)] = color[(obj_id + 1) % len(color)]
                 img = cv2.addWeighted(img, 1, mask_img, 0.2, 0)
 
+
             for obj_id, bbox in bbox_to_vis.items():
-                cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color[obj_id % len(color)], 2)
+                x_min, y_min, width, height = bbox
+                cv2.rectangle(img, (x_min, y_min), (x_min + width, y_min + height), color[obj_id % len(color)], 2)
 
             out.write(img)
 
         out.release()
 
-    return result_video_file_name
+
+    output_path = os.path.join(project_path, f"samurai_result_{object_name}.mp4")
+    video_processing.run_ffmpeg_convert_h264(result_video_file_name,output_path)
+    return output_path

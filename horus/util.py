@@ -2,6 +2,7 @@ import cv2
 import os
 import uuid
 import re
+import yaml
 
 
 def get_image_from_video(video_path: str, frame_id: int):
@@ -64,3 +65,23 @@ def remove_files(file_list: list[str]):
             print(f"Remove: {file}")
         except:
             print(f"Can't Remove: {file}")
+
+
+def read_yaml(path: str):
+    if not os.path.isfile(path):
+        with open(path, mode='w') as f:
+            f.close()
+    with open(path, 'r') as yml:
+        data = yaml.safe_load(yml)
+        if data == None:
+            data = {}
+    return data
+
+
+def write_yaml(path: str, data: dict):
+    with open(path, "w") as yaml_file:
+        yaml.dump(data, yaml_file, default_flow_style=False, allow_unicode=True)
+
+
+def mxm(input):
+    return max(0, min(int(input), 65535))

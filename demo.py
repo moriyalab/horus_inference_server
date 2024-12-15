@@ -1,10 +1,17 @@
 import cv2
 from ultralytics import RTDETR
+import time
 
 # モデルのロード
-model = RTDETR('./runs/horus_project/weights/last.pt')
+# model = RTDETR('/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/train_result/weights/best.pt')
+model = RTDETR('/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/train_result/weights/best.engine')
 
-# 動画ファイルのパス
+# model.export(
+#     format="engine",
+#     int8=True,
+#     data="/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/dataset_for_yolo.yaml",  
+# )
+# # 動画ファイルのパス
 video_path = '/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/timelaps.mp4'
 
 # 動画ファイルを開く
@@ -20,7 +27,10 @@ while True:
         break  # 動画の最後に到達
 
     # モデルによる推論
-    results = model.predict(frame, conf=0.4)
+    start = time.perf_counter()
+    results = model.predict(frame, conf=0.4, verbose=False)
+    end = time.perf_counter()
+    print(int((end - start) * 1000))
     annotated_frame = results[0].plot()
 
     # 結果の表示
