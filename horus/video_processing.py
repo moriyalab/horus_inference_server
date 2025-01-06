@@ -3,6 +3,9 @@ import subprocess
 import tempfile
 import cv2
 from pathlib import Path
+from threading import Thread, Semaphore
+from queue import Queue
+import glob
 from horus import util
 from horus import project_manager
 
@@ -24,6 +27,7 @@ def run_ffmpeg_concat_av1(input_list: str, output_file: str):
     command = [
         "ffmpeg",
         "-safe", "0",
+        "-c:v", "av1_cuvid",
         "-f", "concat",
         "-i", input_list,
         "-c:v", "av1_nvenc",
@@ -89,10 +93,67 @@ def run_ffmpeg_convert_h264(input_file: str, output_file: str):
         print(e.stderr)
 
 
+def run_ffmpeg_convert_av1(input_file: str, output_file: str):
+    command = [
+        "ffmpeg",
+        "-i", input_file,
+        "-c:v", "av1_nvenc",
+        "-preset", "p1",
+        "-tune", "ull",
+        "-b:v", "200k",
+        "-an",
+        output_file
+    ]
+
+    try:
+        subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        print("ffmpegコマンドの実行中にエラーが発生しました。")
+        print(e.stderr)
+
+
+def process_encode_with_thread(out_dir, queue, semaphore):
+    while not queue.empty():
+        video_path = queue.get()
+        with semaphore:
+            print("Processing start: ", video_path)
+            basename = os.path.basename(video_path)
+            outfilename = basename.replace(os.path.splitext(basename)[1], ".webm")
+            outpath = os.path.join(out_dir, outfilename)
+            run_ffmpeg_convert_av1(video_path, outpath)
+        queue.task_done()
+
+
+def convert_to_av1_format(video_files: list[str], out_dir: str):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    max_threads = 2
+    semaphore = Semaphore(max_threads)
+    queue = Queue()
+
+    for video_path in video_files:
+        queue.put(video_path)
+
+    threads = []
+    for _ in range(max_threads):
+        thread = Thread(target=process_encode_with_thread, args=(out_dir, queue, semaphore))
+        threads.append(thread)
+        thread.start()
+
+    queue.join()
+
+    for thread in threads:
+        thread.join()
+
+
 def video_processing_ui(video_files: list[str], project_name: str):
     project_dir = project_manager.make_project(project_name)
 
-    video_files = util.natural_sort(video_files)
+    video_file_dir = os.path.join(project_dir, "video_files")
+    convert_to_av1_format(video_files, video_file_dir)
+
+    video_files = util.natural_sort(glob.glob(os.path.join(video_file_dir, "*")))
     video_list_path = make_video_list_file(video_files)
     MERGE_V_NAME = "all_video_merge.webm"
     merge_video_path = os.path.join(project_dir, MERGE_V_NAME)
