@@ -137,5 +137,4 @@ RUN cd /workspace/samurai/sam2/checkpoints && \
 
 RUN pip install "onnx>=1.12.0"
 RUN pip install --upgrade pip setuptools wheel
-# RUN pip install nvidia-pyindex --use-pep517
 RUN pip install tensorrt-cu12 --use-pep517
