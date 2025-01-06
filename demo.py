@@ -9,7 +9,8 @@ model = RTDETR('/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/
 # model.export(
 #     format="engine",
 #     int8=True,
-#     data="/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/dataset_for_yolo.yaml",  
+#     data="/workspace/horus_inference_server/projects/
+# horus_prj-dc56b22ab7/dataset_for_yolo.yaml",
 # )
 # # 動画ファイルのパス
 video_path = '/workspace/horus_inference_server/projects/horus_prj-dc56b22ab7/timelaps.mp4'

@@ -54,8 +54,8 @@ def edit_project_info_str(key: str, project_dir: str, data: str):
 
 
 def edit_project_info_bbox(
-        project_dir: str, object_name: str, 
-        bbox_x_min: int, bbox_y_min: int, 
+        project_dir: str, object_name: str,
+        bbox_x_min: int, bbox_y_min: int,
         bbox_width: int, bbox_height: int
         ):
     project_info_file = os.path.join(project_dir, "horus.yaml")
@@ -65,11 +65,11 @@ def edit_project_info_bbox(
         project_data["base_annotation"] = {}
 
     project_data["base_annotation"][object_name] = {
-            "bbox" : {
-                "x_min" : bbox_x_min,
-                "y_min" : bbox_y_min,
-                "width" : bbox_width,
-                "height" : bbox_height,
+            "bbox": {
+                "x_min": bbox_x_min,
+                "y_min": bbox_y_min,
+                "width": bbox_width,
+                "height": bbox_height,
             }
         }
 

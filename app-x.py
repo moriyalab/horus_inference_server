@@ -42,6 +42,7 @@ def update_reload_prj_list_vinf():
 def update_reload_prj_list_ml():
     return gr.update(choices=project_manager.get_projects_str())
 
+
 def remove_project_ui(input):
     project_manager.remove_project(input)
     db = project_manager.get_projects_db()

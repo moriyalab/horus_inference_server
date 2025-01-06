@@ -68,6 +68,7 @@ def run_ffmpeg_timelaps_h264(input_file: str, output_file: str, max_time_sec: in
         print("ffmpegコマンドの実行中にエラーが発生しました。")
         print(e.stderr)
 
+
 def run_ffmpeg_convert_h264(input_file: str, output_file: str):
     command = [
         "ffmpeg",
@@ -97,7 +98,7 @@ def video_processing_ui(video_files: list[str], project_name: str):
     merge_video_path = os.path.join(project_dir, MERGE_V_NAME)
     run_ffmpeg_concat_av1(video_list_path, merge_video_path)
     project_manager.edit_project_info_str(
-        key="merge_video_name", 
+        key="merge_video_name",
         project_dir=project_dir,
         data=MERGE_V_NAME
         )
@@ -106,7 +107,7 @@ def video_processing_ui(video_files: list[str], project_name: str):
     timelaps_video_path = os.path.join(project_dir, TIMELAPS_V_NAME)
     run_ffmpeg_timelaps_h264(merge_video_path, timelaps_video_path, 5 * 60)
     project_manager.edit_project_info_str(
-        key="timelaps_video_name", 
+        key="timelaps_video_name",
         project_dir=project_dir,
         data=TIMELAPS_V_NAME
         )

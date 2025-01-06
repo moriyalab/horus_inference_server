@@ -52,10 +52,10 @@
 # print(end - start)
 
 import os
-import gradio as gr
-import cv2
+# import gradio as gr
+# import cv2
 import glob
-import tempfile
+# import tempfile
 from horus import project_manager
 
 project_data = project_manager.get_projects_db()["2024-10-08"]

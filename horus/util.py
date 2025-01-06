@@ -63,8 +63,12 @@ def remove_files(file_list: list[str]):
         try:
             os.remove(file)
             print(f"Remove: {file}")
-        except:
-            print(f"Can't Remove: {file}")
+        except FileNotFoundError:
+            print(f"File not found: {file}")
+        except PermissionError:
+            print(f"Permission denied: {file}")
+        except Exception as e:
+            print(f"Can't Remove {file}: {e}")
 
 
 def read_yaml(path: str):
@@ -73,7 +77,7 @@ def read_yaml(path: str):
             f.close()
     with open(path, 'r') as yml:
         data = yaml.safe_load(yml)
-        if data == None:
+        if data is None:
             data = {}
     return data
 

@@ -6,6 +6,7 @@ import random
 from horus import project_manager
 from horus import util
 
+
 def get_label_data(project_path: str):
     labels_dir = os.path.join(project_path, "horus_dataset/labels")
     label_path_list = glob.glob(os.path.join(labels_dir, "*"))
@@ -41,9 +42,11 @@ def get_all_class(all_label_data, images_path_list):
 
     return cls_list_with_index
 
+
 def get_dataset_dir(project_path: str):
     dataset_path = os.path.join(project_path, "dataset_for_yolo")
     return dataset_path
+
 
 def project_path_to_dataset_dir(project_path: str):
     dataset_path = get_dataset_dir(project_path)
@@ -61,7 +64,8 @@ def project_path_to_dataset_dir(project_path: str):
         return image_train_path, label_train_path
     else:
         return image_val_path, label_val_path
-    
+
+
 def conv_ext(path: str, new_ext: str):
     basename_without_ext = os.path.splitext(os.path.basename(path))[0]
     return basename_without_ext + "." + new_ext.replace(".", "")
@@ -73,10 +77,10 @@ def make_dataset_yaml(project_path: str, cls_list):
         names[id] = cls
 
     config_data = {
-        "path" : os.path.join(project_path, "dataset_for_yolo"),
-        "train" : "images/train",
-        "val" : "images/val",
-        "names" : names
+        "path": os.path.join(project_path, "dataset_for_yolo"),
+        "train": "images/train",
+        "val": "images/val",
+        "names": names
     }
 
     yaml_path = os.path.join(project_path, "dataset_for_yolo.yaml")
@@ -94,7 +98,6 @@ def convert_to_yolo_dataset(project_name: str):
     all_label_data = get_all_label_data(label_path_list)
 
     cls_list = get_all_class(all_label_data, images_path_list)
-
 
     for image_path in images_path_list:
         save_img_dir, save_label_dir = project_path_to_dataset_dir(project_path)
@@ -117,12 +120,11 @@ def convert_to_yolo_dataset(project_name: str):
         f.close()
 
     config_file_path = make_dataset_yaml(project_path, cls_list)
-    dataset_dir =  get_dataset_dir(project_path)
+    dataset_dir = get_dataset_dir(project_path)
     project_manager.edit_project_info_dict(
-        key="yolo_dataset", 
-        project_dir=project_path, 
-        data= {
+        key="yolo_dataset",
+        project_dir=project_path,
+        data={
             "config_file": os.path.basename(config_file_path),
             "dataset_root": os.path.basename(dataset_dir)
         })
-

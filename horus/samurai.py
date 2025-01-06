@@ -31,9 +31,9 @@ def project_path_to_dataset_dir(project_path: str, frame_id: int):
 
 
 def save_yolo_format(
-        bboxes, object_name: str, 
-        frame, frame_id: int, 
-        project_path: str, 
+        bboxes, object_name: str,
+        frame, frame_id: int,
+        project_path: str,
         img_width, img_height):
     image_path, label_path, image_name, _ = project_path_to_dataset_dir(project_path, frame_id)
 
@@ -53,16 +53,16 @@ def save_yolo_format(
         norm_height = height / img_height
 
         label_data["annotations"][object_name] = {
-            "x_center" : x_center,
-            "y_center" : y_center,
-            "norm_width" : norm_width,
-            "norm_height" : norm_height,
+            "x_center": x_center,
+            "y_center": y_center,
+            "norm_width": norm_width,
+            "norm_height": norm_height,
         }
     util.write_yaml(label_path, label_data)
 
 
 def samurai_inference(
-        video_folder_path: str, object_name: str, project_path: str,  
+        video_folder_path: str, object_name: str, project_path: str,
         x: int, y: int, w: int, h: int,
         progress=gr.Progress()):
     MODEL_PATH = "/workspace/samurai/sam2/checkpoints/sam2.1_hiera_base_plus.pt"
@@ -119,7 +119,6 @@ def samurai_inference(
                 mask_img[mask.astype(bool)] = color[(obj_id + 1) % len(color)]
                 img = cv2.addWeighted(img, 1, mask_img, 0.2, 0)
 
-
             for obj_id, bbox in bbox_to_vis.items():
                 x_min, y_min, width, height = bbox
                 cv2.rectangle(img, (x_min, y_min), (x_min + width, y_min + height), color[obj_id % len(color)], 2)
@@ -128,7 +127,6 @@ def samurai_inference(
 
         out.release()
 
-
     output_path = os.path.join(project_path, f"samurai_result_{object_name}.mp4")
-    video_processing.run_ffmpeg_convert_h264(result_video_file_name,output_path)
+    video_processing.run_ffmpeg_convert_h264(result_video_file_name, output_path)
     return output_path

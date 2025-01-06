@@ -38,15 +38,15 @@ def plot_base_annotation(project_name: str):
     colors = [
         ((4, 42, 255), (255, 255, 255)),
         ((11, 219, 235), (0, 0, 0)),
-        ((243, 243, 243),(0, 0, 0)),
-        ((0, 223, 183),(0, 0, 0)),
-        ((17, 31, 104),(255, 255, 255)),
-        ((255, 111, 221),(255, 255, 255)),
-        ((255, 68, 79),(255, 255, 255)),
-        ((204, 237, 0),(255, 255, 255)),
-        ((0, 243, 68),(0, 0, 0)),
-        ((189, 0, 255),(255, 255, 255)),
-        ((0, 180, 255),(0, 0, 0))
+        ((243, 243, 243), (0, 0, 0)),
+        ((0, 223, 183), (0, 0, 0)),
+        ((17, 31, 104), (255, 255, 255)),
+        ((255, 111, 221), (255, 255, 255)),
+        ((255, 68, 79), (255, 255, 255)),
+        ((204, 237, 0), (255, 255, 255)),
+        ((0, 243, 68), (0, 0, 0)),
+        ((189, 0, 255), (255, 255, 255)),
+        ((0, 180, 255), (0, 0, 0))
         ]
 
     project_data = project_manager.get_projects_db()[project_name]
@@ -56,13 +56,13 @@ def plot_base_annotation(project_name: str):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     cap.release()
 
-    if not ret :
+    if not ret:
         return None
-    
+
     if "base_annotation" not in project_data:
         project_data["base_annotation"] = {}
 
-    for index , (object_name, annotation) in enumerate(project_data["base_annotation"].items()):
+    for index, (object_name, annotation) in enumerate(project_data["base_annotation"].items()):
         bbox = annotation["bbox"]
         x_min = bbox["x_min"]
         y_min = bbox["y_min"]

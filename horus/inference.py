@@ -56,12 +56,11 @@ def create_inference_timelaps_video(project_name: str):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(result_video_file_name, fourcc, 30, (width, height))
 
-
     model = RTDETR(get_ml_weight(project_name))
     for results in model.predict(video_path, stream=True, verbose=False):
         annotated_frame = results.plot()
         out.write(annotated_frame)
-    
+
     out.release()
     output_video_path = os.path.join(project_data["project_path"], "timelaps_predicted.mp4")
     video_processing.run_ffmpeg_convert_h264(result_video_file_name, output_video_path)
@@ -86,18 +85,18 @@ def mlanalyze_video(project_name: str):
     anayle_info = {
         "project_name": project_name,
         "create_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "video_info" : {
-            "name" : project_data["merge_video_name"],
+        "video_info": {
+            "name": project_data["merge_video_name"],
             "width": width,
             "height": height,
             "fps": fps,
             "frameNum": frameNum
         }
     }
-    yaml_path = os.path.join(anayle_ws_dir, f"info.yaml")
+    yaml_path = os.path.join(anayle_ws_dir, "info.yaml")
     util.write_yaml(yaml_path, anayle_info)
 
-    csv_path = os.path.join(anayle_ws_dir, f"result.csv")
+    csv_path = os.path.join(anayle_ws_dir, "result.csv")
     model = RTDETR(get_ml_weight(project_name))
     with open(csv_path, mode="w", newline="") as f:
         writer = csv.writer(f)
