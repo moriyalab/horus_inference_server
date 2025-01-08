@@ -147,13 +147,14 @@ def convert_to_av1_format(video_files: list[str], out_dir: str):
         thread.join()
 
 
-def video_processing_ui(video_files: list[str], project_name: str):
+def video_processing_ui(raw_video_files: list[str], project_name: str):
     project_dir = project_manager.make_project(project_name)
 
-    video_file_dir = os.path.join(project_dir, "video_files")
-    convert_to_av1_format(video_files, video_file_dir)
+    encoded_file_dir = util.get_temp_dir()
+    convert_to_av1_format(raw_video_files, encoded_file_dir)
+    util.remove_files(raw_video_files)
 
-    video_files = util.natural_sort(glob.glob(os.path.join(video_file_dir, "*")))
+    video_files = util.natural_sort(glob.glob(os.path.join(encoded_file_dir, "*")))
     video_list_path = make_video_list_file(video_files)
     MERGE_V_NAME = "all_video_merge.webm"
     merge_video_path = os.path.join(project_dir, MERGE_V_NAME)
@@ -163,6 +164,7 @@ def video_processing_ui(video_files: list[str], project_name: str):
         project_dir=project_dir,
         data=MERGE_V_NAME
         )
+    util.remove_files(video_files)
 
     TIMELAPS_V_NAME = "timelaps.mp4"
     timelaps_video_path = os.path.join(project_dir, TIMELAPS_V_NAME)
@@ -172,6 +174,5 @@ def video_processing_ui(video_files: list[str], project_name: str):
         project_dir=project_dir,
         data=TIMELAPS_V_NAME
         )
-    util.remove_files(video_files)
 
     return video_files

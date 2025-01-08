@@ -11,6 +11,8 @@
 *.engine
 *.mcap
 *.webm
+*.out
+*.json
 
 flagged/
 datasets/
