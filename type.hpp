@@ -102,30 +102,54 @@ auto operator+=(horus_data_format& d1, const horus_data_format& d2)
 }
 
 struct horus_analyze_format {
-    horus_data_format horus_data;
     float norm_center;
     float norm_top_right;
     float norm_bottom_right;
     float norm_top_left;
     float norm_bottom_left;
 
-    horus_analyze_format()
-        : horus_data(horus_data_format()), 
+    horus_analyze_format():
             norm_center(0),
             norm_top_right(0), 
             norm_bottom_right(0), 
             norm_top_left(0), 
             norm_bottom_left(0) {}
-    horus_analyze_format(
-        horus_data_format hdf,
-        float c, float tr, float br, float tl, float bl
-    ): horus_data(hdf), 
+    horus_analyze_format(float c, float tr, float br, float tl, float bl): 
             norm_center(c),
             norm_top_right(tr), 
             norm_bottom_right(br), 
             norm_top_left(tl), 
             norm_bottom_left(bl) {}
 };
+
+auto operator+=(horus_analyze_format& d1, const horus_analyze_format& d2)
+{
+    d1.norm_center += d2.norm_center;
+    d1.norm_top_right += d2.norm_top_right;
+    d1.norm_bottom_right += d2.norm_bottom_right;
+    d1.norm_top_left += d2.norm_top_left;
+    d1.norm_bottom_left += d2.norm_bottom_left;
+}
+
+auto operator/(const horus_analyze_format& d1, const float& s)
+{
+    return horus_analyze_format(
+        d1.norm_center / s,
+        d1.norm_top_right / s,
+        d1.norm_bottom_right / s,
+        d1.norm_top_left / s,
+        d1.norm_bottom_left / s
+    );
+}
+
+auto operator-=(horus_analyze_format& d1, const horus_analyze_format& d2)
+{
+    d1.norm_center -= d2.norm_center;
+    d1.norm_top_right -= d2.norm_top_right;
+    d1.norm_bottom_right -= d2.norm_bottom_right;
+    d1.norm_top_left -= d2.norm_top_left;
+    d1.norm_bottom_left -= d2.norm_bottom_left;
+}
 
 using str_data_base = std::vector<std::vector<std::string>>;
 using horus_bin_format = std::map<int, std::map<int, horus_data_format>>;
