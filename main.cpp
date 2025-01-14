@@ -108,10 +108,10 @@ parse_csv_mmap(const std::string& filepath)
     return std::make_pair(header, cells);
 }
 
-auto xyhw_to_format(float x, float y, float h, float w) -> horus_data_format
+auto xyhw_to_format(uint16_t x, uint16_t y, uint16_t h, uint16_t w) -> horus_data_format
 {
-    float half_width  = w / 2.0f;
-    float half_height = h / 2.0f;
+    uint16_t half_width  = w / 2;
+    uint16_t half_height = h / 2;
 
     point center(x, y);
     point top_right(x + half_width,  y + half_height);
@@ -122,7 +122,7 @@ auto xyhw_to_format(float x, float y, float h, float w) -> horus_data_format
     return horus_data_format(center, top_right, bottom_right, top_left, bottom_left);
 }
 
-inline auto fast_atoi(const std::string & input) -> int
+inline auto fast_atoi(const std::string & input) -> uint16_t
 {
     const char * str = input.c_str();
     int val = 0;
@@ -132,15 +132,8 @@ inline auto fast_atoi(const std::string & input) -> int
     return val;
 }
 
-inline auto fast_atof(const std::string & input) -> float
-{
-    return static_cast<float>(fast_atoi(input));
-}
-
 auto convert_to_horus_format(
-    const str_data_base& data,
-    float image_width,
-    float image_height
+    const str_data_base& data
 ) -> horus_bin_format
 {
     std::vector<std::vector<std::tuple<int,int,horus_data_format>>> local_temp(omp_get_max_threads());
@@ -158,13 +151,13 @@ auto convert_to_horus_format(
                 continue;
             }
 
-            int inner_key = fast_atoi(row[0]);
-            int outer_key = fast_atoi(row[1]);
+            uint16_t inner_key = fast_atoi(row[0]);
+            uint16_t outer_key = fast_atoi(row[1]);
 
-            float x_center = fast_atof(row[2]) / image_width;
-            float y_center = fast_atof(row[3]) / image_height;
-            float w        = fast_atof(row[4]) / image_width;
-            float h        = fast_atof(row[5]) / image_height;
+            uint16_t x_center = fast_atoi(row[2]);
+            uint16_t y_center = fast_atoi(row[3]);
+            uint16_t w        = fast_atoi(row[4]);
+            uint16_t h        = fast_atoi(row[5]);
 
             auto fmt = xyhw_to_format(x_center, y_center, w, h);
             vec_for_this_thread.emplace_back(outer_key, inner_key, fmt);
@@ -184,37 +177,80 @@ auto convert_to_horus_format(
     return results;
 }
 
-auto norm(const point & p) -> float
+auto norm(const point & p) -> uint16_t
 {
-    return std::sqrt(p.x * p.x + p.y * p.y);
+    auto result = p.x * p.x + p.y * p.y;
+    // return result > 100 ? 0 : result;
+    return result;
+
 }
 
-auto apply_moving_average(const std::vector<horus_analyze_format>& data, int avg_size) 
+std::map<int, horus_data_format> moving_average(
+    const std::map<int, horus_data_format>& data_container, int avg_size) 
 {
-    std::vector<horus_analyze_format> result;
-    std::queue<horus_analyze_format> window;
-    horus_analyze_format avg_data;
-
-    for (const auto& point : data) 
-    {
-        window.push(point);
-        avg_data += point;
-
-        if (window.size() > avg_size) 
-        {
-            avg_data -= window.front();
-            window.pop();
-        }
-
-        if (window.size() == avg_size) 
-        {
-            result.push_back(avg_data / static_cast<int>(window.size()));
-        }
+    if (avg_size <= 0) {
+        throw std::invalid_argument("avg_size must be greater than 0");
     }
 
-    if (!window.empty()) 
+    std::map<int, horus_data_format> result;
+    horus_data_format cumulative_sum{};
+    int count = 0;
+
+    auto it = data_container.begin();
+    std::deque<std::pair<int, horus_data_format>> window;
+
+    while (it != data_container.end()) {
+        const auto& [key, data] = *it;
+
+        cumulative_sum += data;
+
+        window.push_back({key, data});
+        count++;
+
+        if (count > avg_size) {
+            const auto& [old_key, old_data] = window.front();
+            cumulative_sum -= old_data;
+
+            window.pop_front();
+            count--;
+        }
+        result[key] = cumulative_sum / count;
+
+        ++it;
+    }
+
+    return result;
+}
+
+std::vector<horus_analyze_format> moving_average(
+    const std::vector<horus_analyze_format>& data_container, int avg_size) 
+{
+    if (avg_size <= 0) {
+        throw std::invalid_argument("avg_size must be greater than 0");
+    }
+
+    std::vector<horus_analyze_format> result;
+    horus_analyze_format cumulative_sum{};
+    int count = 0;
+
+    auto it = data_container.begin();
+    std::deque<horus_analyze_format> window;
+
+    for(const auto & data : data_container)
     {
-        result.push_back(avg_data / static_cast<int>(window.size()));
+        cumulative_sum += data;
+        window.push_back(data);
+        count++;
+
+        if (count > avg_size) {
+            const auto& old_data = window.front();
+            cumulative_sum -= old_data;
+
+            window.pop_front();
+            count--;
+        }
+        result.push_back(cumulative_sum / count);
+
     }
 
     return result;
@@ -222,9 +258,10 @@ auto apply_moving_average(const std::vector<horus_analyze_format>& data, int avg
 
 auto analyze_avgcmp_delta(const std::map<int, horus_data_format>& data_container, int avg_size) 
 {
+    auto data_container_ = moving_average(data_container, 30);
     std::vector<horus_analyze_format> internal_data;
     auto prev_data = horus_data_format();
-    for (const auto & [key, data] : data_container) 
+    for (const auto & [key, data] : data_container_) 
     {
         const auto delta = data - prev_data;
         internal_data.push_back(horus_analyze_format(
@@ -238,30 +275,26 @@ auto analyze_avgcmp_delta(const std::map<int, horus_data_format>& data_container
         prev_data = data;
     }
 
-
     int count = 0;
     horus_analyze_format avg_data;
     std::vector<horus_analyze_format> result_data;
-
     for (const auto & data : internal_data) 
     {
         avg_data += data;
         count++;
         if (count == avg_size) 
         {
-            result_data.push_back(avg_data / count);
-
+            result_data.push_back(avg_data);
             avg_data = horus_analyze_format();
             count = 0;
         }
     }
+    result_data.push_back(avg_data);
 
-    if (count > 0) {
-        result_data.push_back(avg_data / count);
-    }
+    result_data.erase(result_data.begin());
+    result_data = moving_average(result_data, 10);
 
-    return apply_moving_average(result_data, 12);
-    // return result_data;
+    return result_data;
 }
 
 void write_data_to_csv(const std::vector<horus_analyze_format> & data_container,
@@ -287,7 +320,7 @@ void write_data_to_csv(const std::vector<horus_analyze_format> & data_container,
     {
         int len = std::sprintf(
             lineBuffer,
-            "%.6f,%.6f,%.6f,%.6f,%.6f\n",
+            "%d,%d,%d,%d,%d\n",
             data.norm_center,
             data.norm_bottom_left,
             data.norm_bottom_right,
@@ -306,7 +339,7 @@ int main()
 
     const auto [_, str_data] = parse_csv_mmap("test2.csv");
 
-    auto horus_data = convert_to_horus_format(str_data, 640.0f, 480.0f);
+    auto horus_data = convert_to_horus_format(str_data);
 
     #pragma omp parallel for
     for (int i = 0; i < static_cast<int>(horus_data.size()); ++i) {

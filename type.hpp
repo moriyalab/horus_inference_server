@@ -21,10 +21,10 @@
 
 
 struct point {
-    float x;
-    float y;
+    uint16_t x;
+    uint16_t y;
     point() : x(0), y(0) {}
-    point(float px, float py) : x(px), y(py) {}
+    point(uint16_t px, uint16_t py) : x(px), y(py) {}
 };
 
 auto operator+=(point& p1, const point& p2)
@@ -33,7 +33,13 @@ auto operator+=(point& p1, const point& p2)
     p1.y += p2.y;
 }
 
-auto operator/(const point& p1, const float& s)
+auto operator-=(point& p1, const point& p2)
+{
+    p1.x -= p2.x;
+    p1.y -= p2.y;
+}
+
+auto operator/(const point& p1, const uint16_t& s)
 {
     return point(
         p1.x / s,
@@ -70,7 +76,7 @@ struct horus_data_format {
         : center(c), top_right(tr), bottom_right(br), top_left(tl), bottom_left(bl) {}
 };
 
-auto operator/(const horus_data_format& d1, const float& s)
+auto operator/(const horus_data_format& d1, const uint16_t& s)
 {
     return horus_data_format(
         d1.center / s,
@@ -101,12 +107,21 @@ auto operator+=(horus_data_format& d1, const horus_data_format& d2)
     d1.bottom_left += d2.bottom_left;
 }
 
+auto operator-=(horus_data_format& d1, const horus_data_format& d2)
+{
+    d1.center -= d2.center;
+    d1.top_right -= d2.top_right;
+    d1.bottom_right -= d2.bottom_right;
+    d1.top_left -= d2.top_left;
+    d1.bottom_left -= d2.bottom_left;
+}
+
 struct horus_analyze_format {
-    float norm_center;
-    float norm_top_right;
-    float norm_bottom_right;
-    float norm_top_left;
-    float norm_bottom_left;
+    uint16_t norm_center;
+    uint16_t norm_top_right;
+    uint16_t norm_bottom_right;
+    uint16_t norm_top_left;
+    uint16_t norm_bottom_left;
 
     horus_analyze_format():
             norm_center(0),
@@ -114,7 +129,7 @@ struct horus_analyze_format {
             norm_bottom_right(0), 
             norm_top_left(0), 
             norm_bottom_left(0) {}
-    horus_analyze_format(float c, float tr, float br, float tl, float bl): 
+    horus_analyze_format(uint16_t c, uint16_t tr, uint16_t br, uint16_t tl, uint16_t bl): 
             norm_center(c),
             norm_top_right(tr), 
             norm_bottom_right(br), 
@@ -131,7 +146,7 @@ auto operator+=(horus_analyze_format& d1, const horus_analyze_format& d2)
     d1.norm_bottom_left += d2.norm_bottom_left;
 }
 
-auto operator/(const horus_analyze_format& d1, const float& s)
+auto operator/(const horus_analyze_format& d1, const uint16_t& s)
 {
     return horus_analyze_format(
         d1.norm_center / s,
