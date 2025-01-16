@@ -256,12 +256,15 @@ std::vector<horus_analyze_format> moving_average(
     return result;
 }
 
+using analyze_x = std::map<int, std::vector<std::pair<float, horus_analyze_format>>>;
+
+
 auto analyze_avgcmp_delta(const std::map<int, horus_data_format>& data_container, int avg_size) 
 {
     auto data_container_ = moving_average(data_container, 30);
     std::vector<horus_analyze_format> internal_data;
     auto prev_data = horus_data_format();
-    for (const auto & [key, data] : data_container_) 
+    for (const auto & [key, data] : data_container) 
     {
         const auto delta = data - prev_data;
         internal_data.push_back(horus_analyze_format(
@@ -275,74 +278,67 @@ auto analyze_avgcmp_delta(const std::map<int, horus_data_format>& data_container
         prev_data = data;
     }
 
-    int count = 0;
-    horus_analyze_format avg_data;
-    std::vector<horus_analyze_format> internal_result_data;
-    for (const auto & data : internal_data) 
-    {
-        avg_data += data;
-        count++;
-        if (count == avg_size) 
-        {
-            internal_result_data.push_back(avg_data);
-            avg_data = horus_analyze_format();
-            count = 0;
-        }
-    }
-    internal_result_data.push_back(avg_data);
+    // int count = 0;
+    // horus_analyze_format avg_data;
+    // std::vector<horus_analyze_format> internal_result_data;
+    // for (const auto & data : internal_data) 
+    // {
+    //     avg_data += data;
+    //     count++;
+    //     if (count == avg_size) 
+    //     {
+    //         internal_result_data.push_back(avg_data);
+    //         avg_data = horus_analyze_format();
+    //         count = 0;
+    //     }
+    // }
+    // internal_result_data.push_back(avg_data);
 
-    internal_result_data.erase(internal_result_data.begin());
-    internal_result_data = moving_average(internal_result_data, 10);
+    internal_data.erase(internal_data.begin());
+    internal_data = moving_average(internal_data, 15);
 
-    std::vector<std::pair<float, horus_analyze_format>> result_data;
+    analyze_x result_data;
     float time = 0.0f;
-    float dt = 72.0f / static_cast<float>(internal_result_data.size());
-    for(const auto & data : internal_result_data)
+    float dt = 72.0f / static_cast<float>(internal_data.size());
+    for(const auto & data : internal_data)
     {
         time += dt;
-        if(time - static_cast<float>(static_cast<int>(time)) < 0.5){continue;}
-        result_data.push_back(std::make_pair(time, data));
+        result_data[static_cast<int>(time)].push_back(std::make_pair(time, data));
     }
 
     return result_data;
 }
 
-void write_data_to_csv(const std::vector<std::pair<float, horus_analyze_format>> & data_container,
-                                const std::string & filename)
+void write_data_to_csv(const analyze_x & data_containers, const std::string & filename)
 {
-    FILE* fp = std::fopen(filename.c_str(), "wb");
-    if (!fp) 
+    for(const auto & [id, data_container] : data_containers)
     {
-        std::perror(("Failed to open the file: " + filename).c_str());
-        return;
+        FILE* fp = std::fopen(("results/" + std::to_string(id) + "_" + filename).c_str(), "wb");
+        if (!fp) 
+        {
+            std::perror(("Failed to open the file: " + filename).c_str());
+            return;
+        }
+
+        std::fputs("time,"
+                "norm_bottom_right\n", fp);
+
+
+        char lineBuffer[1024];
+
+        for (auto const & [time, data] : data_container) 
+        {
+            int len = std::sprintf(
+                lineBuffer,
+                "%0.3f,%d\n",
+                time,
+                data.norm_bottom_right
+            );
+            std::fwrite(lineBuffer, 1, len, fp);
+        }
+
+        std::fclose(fp);
     }
-
-    std::fputs("time,"
-               "norm_center,"
-               "norm_bottom_left,"
-               "norm_bottom_right,"
-               "norm_top_left,"
-               "norm_top_right,\n", fp);
-
-
-    char lineBuffer[1024];
-
-    for (auto const & [time, data] : data_container) 
-    {
-        int len = std::sprintf(
-            lineBuffer,
-            "%0.3f,%d,%d,%d,%d,%d\n",
-            time,
-            data.norm_center,
-            data.norm_bottom_left,
-            data.norm_bottom_right,
-            data.norm_top_left,
-            data.norm_top_right
-        );
-        std::fwrite(lineBuffer, 1, len, fp);
-    }
-
-    std::fclose(fp);
 }
 
 int main()
@@ -353,16 +349,17 @@ int main()
 
     auto horus_data = convert_to_horus_format(str_data);
 
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < static_cast<int>(horus_data.size()); ++i) {
         auto it = std::next(horus_data.begin(), i);
         const auto& [cid, data] = *it;
 
-        #pragma omp critical
+        // #pragma omp critical
         std::cout << "class id=" << cid << " elements size=" << data.size() << std::endl;
-        const auto alyzed_data = analyze_avgcmp_delta(data, 75);
+        const auto alyzed_data = analyze_avgcmp_delta(data, 15);
         const auto filename = "analyzed_" + std::to_string(cid) + ".csv";
         write_data_to_csv(alyzed_data, filename);
+        break;
     }
 
     const auto end_time = std::chrono::high_resolution_clock::now();
