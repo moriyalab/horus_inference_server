@@ -1,6 +1,7 @@
 import os
 import gradio as gr
 import cv2
+import glob
 from horus import video_processing
 from horus import project_manager
 from horus import util
@@ -98,21 +99,37 @@ def update_input_video(input: str):
     return gr.update(maximum=width), gr.update(maximum=height), gr.update(maximum=width), gr.update(maximum=height), frame
 
 
+def upload_video_and_make_project(project_name: str):
+    project_manager.make_project(project_name)
+
+    file_list = glob.glob("/workspace/horus_inference_server/INPUT_VIDEOS_COPY_TO_HERE/*")
+    file_list = util.natural_sort(file_list)
+    _, timelaps= video_processing.video_processing_master(file_list, project_name)
+    return timelaps
+
 with gr.Blocks() as main_ui:
     with gr.Tab("Upload Video to Database"):
         with gr.Row():
             with gr.Column():
-                input_videos = gr.File(label="Upload Video", file_count="multiple", file_types=[".mp4", ".mov", ".mpg", ".avi"])
                 input_project_name = gr.Text(label="Project Name")
 
+                reload_button = gr.Button("Reload Video List")
                 upload_button = gr.Button("Start Upload", variant="primary")
             with gr.Column():
-                output_status = gr.Text(label="Status")
+                output_preview_video = gr.Video(label="Status")
+                output_video_list = gr.Dataframe(
+                    label="Status",
+                    headers=["File Name"])
 
         upload_button.click(
-            video_processing.video_processing_ui,
-            inputs=[input_videos, input_project_name],
-            outputs=[output_status])
+            upload_video_and_make_project,
+            inputs=[input_project_name],
+            outputs=[output_preview_video])
+
+        reload_button.click(
+            util.search_input_videos,
+            inputs=[],
+            outputs=[output_video_list])
 
     with gr.Tab("Edit Database"):
         with gr.Row():

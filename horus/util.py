@@ -3,6 +3,7 @@ import os
 import uuid
 import re
 import yaml
+import glob
 
 
 def get_image_from_video(video_path: str, frame_id: int):
@@ -51,7 +52,7 @@ def video_to_images(video_path: str):
     return output_dir
 
 
-def natural_sort(file_list):
+def natural_sort(file_list: list[str]):
     def alphanum_key(key):
         filename = os.path.basename(key)
         return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', filename)]
@@ -89,3 +90,8 @@ def write_yaml(path: str, data: dict):
 
 def mxm(input):
     return max(0, min(int(input), 65535))
+
+def search_input_videos():
+    file_list = glob.glob("/workspace/horus_inference_server/INPUT_VIDEOS_COPY_TO_HERE/*")
+    file_list = natural_sort(file_list)
+    return [[os.path.basename(path)] for path in file_list]

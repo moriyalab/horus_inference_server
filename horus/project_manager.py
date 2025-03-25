@@ -46,8 +46,8 @@ def get_projects_db(project_host_dir="/workspace/horus_inference_server/projects
     return project_database
 
 
-def edit_project_info_str(key: str, project_dir: str, data: str):
-    project_info_file = os.path.join(project_dir, "horus.yaml")
+def edit_project_info_str(key: str, project_name: str, data: str):
+    project_info_file = get_path(project_name, "horus.yaml")
     project_data = util.read_yaml(project_info_file)
     project_data[key] = data
     util.write_yaml(project_info_file, project_data)
@@ -97,3 +97,18 @@ def remove_project(project_name: str):
         print(result.stdout)
     except subprocess.CalledProcessError as e:
         print(e.stderr)
+
+def make_dir(project_name: str, dirname: str):
+    database = get_projects_db()
+    project_path = database[project_name]["project_path"]
+    dir = os.path.join(project_path, dirname)
+
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+    return dir
+
+def get_path(project_name: str, filename: str):
+    database = get_projects_db()
+    project_path = database[project_name]["project_path"]
+    return os.path.join(project_path, filename)

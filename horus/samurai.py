@@ -128,5 +128,5 @@ def samurai_inference(
         out.release()
 
     output_path = os.path.join(project_path, f"samurai_result_{object_name}.mp4")
-    video_processing.run_ffmpeg_convert_h264(result_video_file_name, output_path)
+    video_processing.run_any_to_av1(result_video_file_name, output_path)
     return output_path
