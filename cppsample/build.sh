@@ -14,4 +14,4 @@ g++ sample_hearts_analyze.cpp -o sample_hearts_analyze.out \
   -lopencv_videoio
 
 # ./sample_hearts_analyze.out result.csv all_video_merge.webm 0 ./out.csv
-# ./sample_base_analyze.cpp CSV_FILE_PATH OUTPUT_DIR
+# ./sample_base_analyze.out CSV_FILE_PATH OUTPUT_DIR
