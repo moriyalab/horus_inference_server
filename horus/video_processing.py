@@ -22,6 +22,7 @@ def run_any_to_av1(input_file_path: str, out_file_path: str):
     command = [
         "ffmpeg",
         "-i", input_file_path,
+        "-an",
         "-c:v", "av1_nvenc",
         "-preset", "p1",
         "-tune", "ull",

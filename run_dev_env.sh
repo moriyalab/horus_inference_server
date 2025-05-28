@@ -28,6 +28,7 @@ if [[ -z "$(docker ps)" ]] ;  then
 fi
 
 PLATFORM="$(uname -m)"
+mkdir -p $ROOT/INPUT_VIDEOS_COPY_TO_HERE
 
 if [ $PLATFORM = "x86_64" ]; then
     echo "x86"
